@@ -1,3 +1,4 @@
+// dryft:implements core.markers
 import type { DryftMarker, MarkerRole } from "./types.js";
 
 const MARKER_PATTERN =

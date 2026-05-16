@@ -1,0 +1,60 @@
+# dryft:relates core.manifest
+project:
+  name: dryft
+features:
+  - id: core.manifest
+    title: Manifest loading and validation
+    status: active
+    owner: core
+    paths:
+      - dryft.yml
+      - src/manifest.ts
+      - src/types.ts
+      - test/manifest.test.ts
+  - id: core.markers
+    title: Language-agnostic marker parsing
+    status: active
+    owner: core
+    paths:
+      - src/markers.ts
+      - test/markers.test.ts
+  - id: core.scanner
+    title: Repository feature-reference scanning
+    status: active
+    owner: core
+    paths:
+      - src/scanner.ts
+      - src/file-list.ts
+      - src/path-utils.ts
+      - test/scanner.test.ts
+  - id: core.ci
+    title: Pull request drift checks
+    status: active
+    owner: core
+    paths:
+      - .github/workflows/dryft.yml
+      - src/ci.ts
+      - src/vendor.d.ts
+      - test/ci.test.ts
+  - id: core.reporting
+    title: Text, JSON, and SARIF reporting
+    status: active
+    owner: core
+    paths:
+      - src/reporters.ts
+      - test/reporters.test.ts
+  - id: core.init
+    title: Project initialization templates
+    status: active
+    owner: core
+    paths:
+      - src/init.ts
+      - test/init.test.ts
+  - id: core.cli
+    title: Command-line interface and public exports
+    status: active
+    owner: core
+    paths:
+      - src/cli.ts
+      - src/index.ts
+      - test/cli.test.ts

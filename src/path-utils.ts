@@ -1,3 +1,4 @@
+// dryft:implements core.scanner
 import path from "node:path";
 
 export function toPosixPath(filePath: string): string {

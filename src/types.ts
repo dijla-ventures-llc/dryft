@@ -1,3 +1,4 @@
+// dryft:relates core.manifest
 export type FeatureStatus = "active" | "deprecated" | "archived";
 
 export type MarkerRole = "implements" | "verifies" | "relates";

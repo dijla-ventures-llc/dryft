@@ -1,3 +1,4 @@
+// dryft:verifies core.init
 import assert from "node:assert/strict";
 import test from "node:test";
 

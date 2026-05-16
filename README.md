@@ -12,15 +12,15 @@ Add file-level markers near the top of source, test, config, migration, or docs
 files:
 
 ```ts
-// dryft:implements auth.magic-link.login
+// dryft:implements <feature-id>
 ```
 
 ```ts
-// dryft:verifies auth.magic-link.login
+// dryft:verifies <feature-id>
 ```
 
 ```md
-<!-- dryft:relates auth.magic-link.login -->
+<!-- dryft:relates <feature-id> -->
 ```
 
 Dryft scans line text, not language ASTs, so the same marker vocabulary works

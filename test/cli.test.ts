@@ -1,3 +1,4 @@
+// dryft:verifies core.cli
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
@@ -10,6 +11,8 @@ import test from "node:test";
 const execFileAsync = promisify(execFile);
 const cliPath = fileURLToPath(new URL("../src/cli.js", import.meta.url));
 const packageJsonPath = fileURLToPath(new URL("../../package.json", import.meta.url));
+const marker = (role: string, featureId: string): string =>
+  `dryft:${role} ${featureId}`;
 
 test("package bin points to the built CLI file", async () => {
   const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
@@ -40,7 +43,7 @@ test("dryft scan emits JSON for a tagged repository", async () => {
   await mkdir(join(dir, "src"), { recursive: true });
   await writeFile(
     join(dir, "src", "auth.ts"),
-    "// dryft:implements auth.magic-link.login\nexport const auth = true;\n"
+    `// ${marker("implements", "auth.magic-link.login")}\nexport const auth = true;\n`
   );
 
   const { stdout } = await runCli(["scan", "--format", "json"], dir);
@@ -63,11 +66,11 @@ test("dryft ci evaluates changed files against a git base ref", async () => {
   await mkdir(join(dir, "test", "auth"), { recursive: true });
   await writeFile(
     join(dir, "src", "auth", "login.ts"),
-    "// dryft:implements auth.magic-link.login\nexport const login = true;\n"
+    `// ${marker("implements", "auth.magic-link.login")}\nexport const login = true;\n`
   );
   await writeFile(
     join(dir, "test", "auth", "login.test.ts"),
-    "// dryft:verifies auth.magic-link.login\nexport const testLogin = true;\n"
+    `// ${marker("verifies", "auth.magic-link.login")}\nexport const testLogin = true;\n`
   );
   await runGit(["add", "."], dir);
   await runGit(["commit", "-m", "implement auth feature"], dir);
@@ -95,7 +98,7 @@ test("dryft ci exits non-zero for unknown feature markers", async () => {
   await mkdir(join(dir, "src"), { recursive: true });
   await writeFile(
     join(dir, "src", "unknown.ts"),
-    "// dryft:implements missing.feature\nexport const unknown = true;\n"
+    `// ${marker("implements", "missing.feature")}\nexport const unknown = true;\n`
   );
 
   await assert.rejects(

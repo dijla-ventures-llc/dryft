@@ -1,3 +1,4 @@
+// dryft:implements core.reporting
 import type { DryftIssue, DryftReport } from "./types.js";
 
 export function toJsonReport(report: DryftReport): string {

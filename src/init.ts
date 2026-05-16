@@ -1,3 +1,4 @@
+// dryft:implements core.init
 export function createStarterManifest(projectName = "dryft-project"): string {
   return [
     "project:",

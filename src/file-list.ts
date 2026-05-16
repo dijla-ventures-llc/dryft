@@ -1,3 +1,4 @@
+// dryft:implements core.scanner
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 

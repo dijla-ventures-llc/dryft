@@ -1,3 +1,4 @@
+// dryft:verifies core.ci
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,6 +7,9 @@ import test from "node:test";
 
 import { evaluateCi } from "../src/ci.js";
 import { loadManifest } from "../src/manifest.js";
+
+const marker = (role: string, featureId: string): string =>
+  `dryft:${role} ${featureId}`;
 
 test("evaluateCi fails changed source files with no Dryft marker", async () => {
   const dir = await mkdtemp(join(tmpdir(), "dryft-ci-"));
@@ -53,7 +57,7 @@ test("evaluateCi warns when changed files fall outside feature path globs", asyn
   );
   await writeFile(
     join(dir, "src", "billing", "checkout.ts"),
-    "// dryft:implements auth.magic-link.login\nexport const checkout = true;\n"
+    `// ${marker("implements", "auth.magic-link.login")}\nexport const checkout = true;\n`
   );
 
   const manifest = await loadManifest(dir);

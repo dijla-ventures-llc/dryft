@@ -1,15 +1,19 @@
+// dryft:verifies core.markers
 import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseMarkers } from "../src/markers.js";
 
+const marker = (role: string, featureId: string): string =>
+  `dryft:${role} ${featureId}`;
+
 test("parses dryft markers from common comment styles", () => {
   const markers = parseMarkers(
     [
-      "// dryft:implements auth.magic-link.login",
-      "# dryft:verifies auth.magic-link.login",
-      "/* dryft:relates billing.checkout */",
-      "<!-- dryft:implements docs.onboarding -->"
+      `// ${marker("implements", "auth.magic-link.login")}`,
+      `# ${marker("verifies", "auth.magic-link.login")}`,
+      `/* ${marker("relates", "billing.checkout")} */`,
+      `<!-- ${marker("implements", "docs.onboarding")} -->`
     ].join("\n"),
     "src/example.ts"
   );
@@ -31,7 +35,7 @@ test("parses dryft markers from common comment styles", () => {
 
 test("ignores unsupported marker roles", () => {
   const markers = parseMarkers(
-    "// dryft:depends auth.magic-link.login",
+    `// ${marker("depends", "auth.magic-link.login")}`,
     "src/example.ts"
   );
 

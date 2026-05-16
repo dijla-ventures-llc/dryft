@@ -1,3 +1,4 @@
+// dryft:verifies core.scanner
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,6 +7,9 @@ import test from "node:test";
 
 import { loadManifest } from "../src/manifest.js";
 import { scanRepository } from "../src/scanner.js";
+
+const marker = (role: string, featureId: string): string =>
+  `dryft:${role} ${featureId}`;
 
 test("scanRepository builds a feature reference graph and reports unknown markers", async () => {
   const dir = await mkdtemp(join(tmpdir(), "dryft-scan-"));
@@ -24,9 +28,9 @@ test("scanRepository builds a feature reference graph and reports unknown marker
   await writeFile(
     join(dir, "src", "auth.ts"),
     [
-      "// dryft:implements auth.magic-link.login",
+      `// ${marker("implements", "auth.magic-link.login")}`,
       "export const auth = true;",
-      "// dryft:verifies missing.feature"
+      `// ${marker("verifies", "missing.feature")}`
     ].join("\n")
   );
 
@@ -59,8 +63,8 @@ test("scanRepository warns on deprecated features and fails archived features", 
   await writeFile(
     join(dir, "src", "auth.ts"),
     [
-      "// dryft:implements auth.legacy-login",
-      "// dryft:implements auth.deleted-login"
+      `// ${marker("implements", "auth.legacy-login")}`,
+      `// ${marker("implements", "auth.deleted-login")}`
     ].join("\n")
   );
 
