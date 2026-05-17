@@ -74,15 +74,33 @@ After `dryft init`, pull requests can run Dryft through the first-party action
 published from a dedicated Marketplace-compatible action repository:
 
 ```yaml
-- uses: dijla-ventures-llc/dryft-action@v1
+- name: Run Dryft
+  id: dryft
+  continue-on-error: true
+  uses: dijla-ventures-llc/dryft-action@v1
   with:
     base: origin/${{ github.base_ref }}
+    format: sarif
+    output: dryft.sarif
+    json-output: dryft-report.json
+
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: dryft.sarif
+
+- name: Upload Dryft JSON report
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: dryft-report
+    path: dryft-report.json
 ```
 
-The action wraps `dryft ci`. It can emit text, JSON, or SARIF output for GitHub
-code scanning annotations. The action itself should live in a separate public
-repository that contains a single root `action.yml` and no workflow files, so it
-can be published to GitHub Marketplace.
+The action wraps `dryft ci`. It can emit SARIF for GitHub code scanning and a
+JSON artifact for review, automation, or future dashboard ingestion. The action
+itself should live in a separate public repository that contains a single root
+`action.yml` and no workflow files, so it can be published to GitHub Marketplace.
 
 ## CI behavior
 
