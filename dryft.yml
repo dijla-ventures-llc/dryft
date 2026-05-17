@@ -32,7 +32,7 @@ features:
     status: active
     owner: core
     paths:
-      - .github/workflows/dryft.yml
+      - .github/workflows/ci.yml
       - scripts/run-tests.mjs
       - src/ci.ts
       - src/vendor.d.ts

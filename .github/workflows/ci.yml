@@ -1,10 +1,21 @@
 # dryft:relates core.ci
-name: Dryft
+name: CI
 
 on:
   pull_request:
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
   dryft:
     runs-on: ubuntu-latest
     permissions:
@@ -15,38 +26,38 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm test
+
       - name: Run Dryft
         id: dryft
         continue-on-error: true
-        run: node dist/src/cli.js ci --base origin/${{ github.base_ref }} --format sarif > dryft.sarif
-      - name: Run Dryft JSON report
-        if: always()
-        continue-on-error: true
-        run: node dist/src/cli.js ci --base origin/${{ github.base_ref }} --format json > dryft-report.json
+        uses: dijla-ventures-llc/dryft-action@v1
+        with:
+          base: origin/${{ github.base_ref }}
+          format: sarif
+          output: dryft.sarif
+          json-output: dryft-report.json
+
       - name: Upload Dryft SARIF to code scanning
         if: always()
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: dryft.sarif
+
       - name: Upload Dryft SARIF artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dryft-sarif
           path: dryft.sarif
+
       - name: Upload Dryft JSON report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dryft-report
           path: dryft-report.json
+
       - name: Fail on Dryft errors
         if: steps.dryft.outcome == 'failure'
         run: exit 1
