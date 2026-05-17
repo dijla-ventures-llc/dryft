@@ -17,6 +17,7 @@ import {
   createStarterManifest
 } from "./init.js";
 import { loadManifest } from "./manifest.js";
+import { runMcp } from "./mcp.js";
 import {
   toContextFeatureReport,
   toContextFileReport,
@@ -43,6 +44,8 @@ try {
     await runCi(args.slice(1));
   } else if (command === "context") {
     await runContext(args.slice(1));
+  } else if (command === "mcp") {
+    await runMcpCommand(args.slice(1));
   } else {
     printHelp();
     process.exitCode = command ? 1 : 0;
@@ -232,6 +235,14 @@ function parseContextFormat(format: string | undefined): "text" | "json" {
   return format === "json" ? "json" : "text";
 }
 
+async function runMcpCommand(rawArgs: string[]): Promise<void> {
+  const { options } = parseArgs(rawArgs);
+  const cwd = options.cwd
+    ? path.resolve(process.cwd(), options.cwd)
+    : process.cwd();
+  await runMcp({ cwd, config: options.config });
+}
+
 function parseFormat(format: string | undefined): OutputFormat {
   if (format === "json" || format === "sarif" || format === "text") {
     return format;
@@ -262,6 +273,7 @@ function printHelp(): void {
     "  dryft context feature <id> [--format text|json] [--config <path>]",
     "  dryft context file <path> [--format text|json] [--config <path>]",
     "  dryft context search <query> [--format text|json] [--config <path>]",
+    "  dryft mcp [--cwd <path>] [--config <path>]",
     ""
   ].join("\n"));
 }
