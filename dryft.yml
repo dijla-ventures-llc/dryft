@@ -72,3 +72,11 @@ features:
     paths:
       - src/infer.ts
       - test/infer.test.ts
+  - id: dist.plugin
+    title: Codex plugin packaging
+    status: active
+    owner: distribution
+    paths:
+      - .codex-plugin/**
+      - .mcp.json
+      - skills/**
