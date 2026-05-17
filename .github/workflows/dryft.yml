@@ -25,10 +25,28 @@ jobs:
         id: dryft
         continue-on-error: true
         run: node dist/src/cli.js ci --base origin/${{ github.base_ref }} --format sarif > dryft.sarif
-      - uses: github/codeql-action/upload-sarif@v3
+      - name: Run Dryft JSON report
         if: always()
+        continue-on-error: true
+        run: node dist/src/cli.js ci --base origin/${{ github.base_ref }} --format json > dryft-report.json
+      - name: Upload Dryft SARIF to code scanning
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: dryft.sarif
+      - name: Upload Dryft SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dryft-sarif
+          path: dryft.sarif
+      - name: Upload Dryft JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dryft-report
+          path: dryft-report.json
       - name: Fail on Dryft errors
         if: steps.dryft.outcome == 'failure'
         run: exit 1

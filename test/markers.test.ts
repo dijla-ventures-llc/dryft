@@ -41,3 +41,27 @@ test("ignores unsupported marker roles", () => {
 
   assert.deepEqual(markers, []);
 });
+
+test("ignores markers inside markdown fenced code examples", () => {
+  const markers = parseMarkers(
+    [
+      "# Usage",
+      "",
+      "```ts",
+      `// ${marker("implements", "docs.example")}`,
+      "```",
+      "",
+      `<!-- ${marker("relates", "docs.real")} -->`
+    ].join("\n"),
+    "README.md"
+  );
+
+  assert.deepEqual(
+    markers.map((marker) => ({
+      role: marker.role,
+      featureId: marker.featureId,
+      line: marker.line
+    })),
+    [{ role: "relates", featureId: "docs.real", line: 7 }]
+  );
+});

@@ -16,5 +16,11 @@ test("init templates include starter manifest, agent instructions, and GitHub wo
   assert.match(createGithubWorkflow(), /base: origin\/\$\{\{ github.base_ref \}\}/);
   assert.match(createGithubWorkflow(), /actions: read/);
   assert.match(createGithubWorkflow(), /json-output: dryft-report\.json/);
+  assert.match(
+    createGithubWorkflow(),
+    /name: Upload Dryft SARIF to code scanning[\s\S]*continue-on-error: true/
+  );
+  assert.match(createGithubWorkflow(), /name: Upload Dryft SARIF artifact/);
+  assert.match(createGithubWorkflow(), /name: dryft-sarif/);
   assert.match(createGithubWorkflow(), /uses: actions\/upload-artifact@v4/);
 });

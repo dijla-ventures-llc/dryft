@@ -45,6 +45,14 @@ test("dryft init writes starter manifest, agent instructions, and workflow", asy
   );
   assert.match(
     await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
+    /name: Upload Dryft SARIF to code scanning[\s\S]*continue-on-error: true/
+  );
+  assert.match(
+    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
+    /name: dryft-sarif/
+  );
+  assert.match(
+    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
     /uses: actions\/upload-artifact@v4/
   );
 });
