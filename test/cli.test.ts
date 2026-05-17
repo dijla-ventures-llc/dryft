@@ -37,6 +37,10 @@ test("dryft init writes starter manifest, agent instructions, and workflow", asy
   );
   assert.match(
     await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
+    /actions: read/
+  );
+  assert.match(
+    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
     /json-output: dryft-report\.json/
   );
   assert.match(

@@ -44,6 +44,7 @@ export function createGithubWorkflow(): string {
     "  dryft:",
     "    runs-on: ubuntu-latest",
     "    permissions:",
+    "      actions: read",
     "      contents: read",
     "      security-events: write",
     "    steps:",

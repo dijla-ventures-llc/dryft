@@ -75,6 +75,9 @@ and is intended for pull request checks.
 After `dryft init`, pull requests can run Dryft through the first-party action
 published from a dedicated Marketplace-compatible action repository:
 
+The workflow token needs `actions: read`, `contents: read`, and
+`security-events: write` permissions when uploading SARIF.
+
 ```yaml
 - name: Run Dryft
   id: dryft
