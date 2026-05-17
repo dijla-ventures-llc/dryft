@@ -53,7 +53,7 @@ export function createGithubWorkflow(): string {
     "      - name: Run Dryft",
     "        id: dryft",
     "        continue-on-error: true",
-    "        uses: dijla-ventures/dryft-action@v1",
+    "        uses: dijla-ventures-llc/dryft-action@v1",
     "        with:",
     "          base: origin/${{ github.base_ref }}",
     "          format: sarif",

@@ -50,6 +50,12 @@ Feature IDs use lowercase hierarchical segments, such as
 
 ## CLI
 
+Install the package from npm:
+
+```sh
+npm install -D @dijla-ventures-llc/dryft
+```
+
 ```sh
 dryft init
 dryft scan --format text
@@ -68,7 +74,7 @@ After `dryft init`, pull requests can run Dryft through the first-party action
 published from a dedicated Marketplace-compatible action repository:
 
 ```yaml
-- uses: dijla-ventures/dryft-action@v1
+- uses: dijla-ventures-llc/dryft-action@v1
   with:
     base: origin/${{ github.base_ref }}
 ```

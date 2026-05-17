@@ -33,7 +33,7 @@ test("dryft init writes starter manifest, agent instructions, and workflow", asy
   );
   assert.match(
     await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
-    /uses: dijla-ventures\/dryft-action@v1/
+    /uses: dijla-ventures-llc\/dryft-action@v1/
   );
 });
 

@@ -52,7 +52,7 @@ export function toSarifReport(report: DryftReport): string {
           tool: {
             driver: {
               name: "Dryft",
-              informationUri: "https://github.com/dijla-ventures/dryft",
+              informationUri: "https://github.com/dijla-ventures-llc/dryft",
               rules
             }
           },
