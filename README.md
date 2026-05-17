@@ -1,5 +1,7 @@
 # dryft
 
+[npm package: `@dijla-ventures-llc/dryft`](https://www.npmjs.com/package/@dijla-ventures-llc/dryft)
+
 Static analysis for feature integrity in the age of AI.
 
 Dryft is a lightweight feature-drift guard for fast-moving, AI-assisted
