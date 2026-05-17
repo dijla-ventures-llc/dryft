@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Dryft
-        uses: dijla-ventures/dryft-feature-drift@v1.0.0
+        uses: dijla-ventures/dryft-action@v1.0.0
         with:
           format: sarif
           output: dryft.sarif
