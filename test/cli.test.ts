@@ -132,6 +132,83 @@ test("dryft ci exits non-zero for unknown feature markers", async () => {
   );
 });
 
+test("dryft context list emits feature summaries", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "dryft-cli-ctx-list-"));
+  await writeExampleManifest(dir);
+  await mkdir(join(dir, "src", "auth"), { recursive: true });
+  await writeFile(
+    join(dir, "src", "auth", "login.ts"),
+    `// ${marker("implements", "auth.magic-link.login")}\nexport const login = true;\n`
+  );
+
+  const { stdout } = await runCli(["context", "list", "--format", "json"], dir);
+  const summaries = JSON.parse(stdout);
+
+  assert.equal(summaries.length, 1);
+  assert.equal(summaries[0].id, "auth.magic-link.login");
+  assert.equal(summaries[0].markerCount, 1);
+  assert.ok(summaries[0].fileCount >= 1);
+});
+
+test("dryft context feature returns marker- and path-sourced files", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "dryft-cli-ctx-feat-"));
+  await writeExampleManifest(dir);
+  await mkdir(join(dir, "src", "auth"), { recursive: true });
+  await writeFile(
+    join(dir, "src", "auth", "login.ts"),
+    `// ${marker("implements", "auth.magic-link.login")}\nexport const login = true;\n`
+  );
+  await writeFile(
+    join(dir, "src", "auth", "session.ts"),
+    `export const session = true;\n`
+  );
+
+  const { stdout } = await runCli(
+    ["context", "feature", "auth.magic-link.login", "--format", "json"],
+    dir
+  );
+  const detail = JSON.parse(stdout);
+
+  assert.equal(detail.feature.id, "auth.magic-link.login");
+  const sources = detail.files.map((entry: { source: string }) => entry.source);
+  assert.ok(sources.includes("marker"));
+  assert.ok(sources.includes("path"));
+});
+
+test("dryft context file returns memberships for a path", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "dryft-cli-ctx-file-"));
+  await writeExampleManifest(dir);
+  await mkdir(join(dir, "src", "auth"), { recursive: true });
+  await writeFile(
+    join(dir, "src", "auth", "login.ts"),
+    `// ${marker("implements", "auth.magic-link.login")}\nexport const login = true;\n`
+  );
+
+  const { stdout } = await runCli(
+    ["context", "file", "src/auth/login.ts", "--format", "json"],
+    dir
+  );
+  const memberships = JSON.parse(stdout);
+
+  assert.equal(memberships.length, 1);
+  assert.equal(memberships[0].featureId, "auth.magic-link.login");
+  assert.equal(memberships[0].source, "marker");
+});
+
+test("dryft context search filters by id, title, and owner", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "dryft-cli-ctx-search-"));
+  await writeExampleManifest(dir);
+
+  const { stdout } = await runCli(
+    ["context", "search", "login", "--format", "json"],
+    dir
+  );
+  const results = JSON.parse(stdout);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].id, "auth.magic-link.login");
+});
+
 async function writeExampleManifest(dir: string): Promise<void> {
   await writeFile(
     join(dir, "dryft.yml"),

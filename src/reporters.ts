@@ -1,5 +1,11 @@
 // dryft:implements core.reporting
-import type { DryftIssue, DryftReport } from "./types.js";
+import type {
+  DryftIssue,
+  DryftReport,
+  FeatureDetail,
+  FeatureMembership,
+  FeatureSummary
+} from "./types.js";
 
 export function toJsonReport(report: DryftReport): string {
   return `${JSON.stringify(report, null, 2)}\n`;
@@ -79,6 +85,109 @@ export function toSarifReport(report: DryftReport): string {
     null,
     2
   )}\n`;
+}
+
+export function toContextListReport(summaries: FeatureSummary[]): string {
+  if (summaries.length === 0) {
+    return "# Features\n\nNo features defined in the manifest.\n";
+  }
+  const lines = [
+    "# Features",
+    "",
+    `${summaries.length} feature${summaries.length === 1 ? "" : "s"} tracked in this repo.`,
+    "",
+    "| ID | Status | Title | Files | Markers | Owner |",
+    "|---|---|---|---|---|---|"
+  ];
+  for (const summary of summaries) {
+    lines.push(
+      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.fileCount} | ${summary.markerCount} | ${summary.owner ?? "—"} |`
+    );
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+export function toContextFeatureReport(detail: FeatureDetail): string {
+  const lines = [`# \`${detail.feature.id}\``, ""];
+  lines.push(`- **Status:** ${detail.feature.status}`);
+  lines.push(`- **Title:** ${detail.feature.title}`);
+  if (detail.feature.owner) {
+    lines.push(`- **Owner:** ${detail.feature.owner}`);
+  }
+  if (detail.feature.paths && detail.feature.paths.length > 0) {
+    lines.push(
+      `- **Paths:** ${detail.feature.paths.map((entry) => `\`${entry}\``).join(", ")}`
+    );
+  }
+
+  lines.push("", `## Files (${detail.files.length})`, "");
+  if (detail.files.length === 0) {
+    lines.push("_No files tracked for this feature._");
+  } else {
+    for (const file of detail.files) {
+      lines.push(`- \`${file.file}\` — ${file.source}`);
+    }
+  }
+
+  const markerTotal =
+    detail.markers.implements.length +
+    detail.markers.verifies.length +
+    detail.markers.relates.length;
+  lines.push("", `## Markers (${markerTotal})`, "");
+  if (markerTotal === 0) {
+    lines.push("_No markers reference this feature._");
+  } else {
+    for (const marker of detail.markers.implements) {
+      lines.push(`- **implements** \`${marker.file}:${marker.line}\``);
+    }
+    for (const marker of detail.markers.verifies) {
+      lines.push(`- **verifies** \`${marker.file}:${marker.line}\``);
+    }
+    for (const marker of detail.markers.relates) {
+      lines.push(`- **relates** \`${marker.file}:${marker.line}\``);
+    }
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+export function toContextFileReport(
+  filePath: string,
+  memberships: FeatureMembership[]
+): string {
+  const lines = [`# \`${filePath}\``, ""];
+  if (memberships.length === 0) {
+    lines.push("This file is not part of any tracked feature.");
+    return `${lines.join("\n")}\n`;
+  }
+  lines.push("This file is part of:", "");
+  for (const membership of memberships) {
+    lines.push(`- \`${membership.featureId}\` (${membership.source})`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+export function toContextSearchReport(
+  query: string,
+  summaries: FeatureSummary[]
+): string {
+  const lines = [`# Search: \`${query}\``, ""];
+  if (summaries.length === 0) {
+    lines.push("No features match this query.");
+    return `${lines.join("\n")}\n`;
+  }
+  lines.push(
+    `Found ${summaries.length} match${summaries.length === 1 ? "" : "es"}.`,
+    "",
+    "| ID | Status | Title | Owner |",
+    "|---|---|---|---|"
+  );
+  for (const summary of summaries) {
+    lines.push(
+      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.owner ?? "—"} |`
+    );
+  }
+  return `${lines.join("\n")}\n`;
 }
 
 function countLabel(count: number, noun: string): string {

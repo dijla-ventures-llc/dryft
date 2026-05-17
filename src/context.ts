@@ -64,9 +64,10 @@ export function computeFeatureIndex(
     if (!feature.paths || feature.paths.length === 0) {
       continue;
     }
+    const matcher = picomatch(feature.paths);
     const entry = features[feature.id];
     for (const file of files) {
-      if (picomatch.isMatch(file, feature.paths)) {
+      if (matcher(file)) {
         entry.pathFiles.push(file);
         if (!hasMembership(fileToFeatures, file, feature.id)) {
           addMembership(fileToFeatures, file, {

@@ -4,7 +4,10 @@ declare module "picomatch" {
     dot?: boolean;
   }
 
+  type Matcher = (input: string) => boolean;
+
   interface Picomatch {
+    (patterns: string | string[], options?: PicomatchOptions): Matcher;
     isMatch(
       input: string,
       patterns: string | string[],
