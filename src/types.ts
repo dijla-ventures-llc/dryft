@@ -1,5 +1,4 @@
-// dryft:relates core.manifest
-export type FeatureStatus = "active" | "deprecated" | "archived";
+﻿export type FeatureStatus = "active" | "deprecated" | "archived";
 
 export type ReportMode = "scan" | "ci";
 

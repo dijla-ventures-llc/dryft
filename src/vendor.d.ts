@@ -1,5 +1,4 @@
-// dryft:relates core.ci
-declare module "picomatch" {
+﻿declare module "picomatch" {
   interface PicomatchOptions {
     dot?: boolean;
   }

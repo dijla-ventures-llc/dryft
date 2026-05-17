@@ -1,5 +1,4 @@
-// dryft:verifies core.reporting
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import test from "node:test";
 
 import { toJsonReport, toSarifReport, toTextReport } from "../src/reporters.js";

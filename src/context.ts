@@ -1,5 +1,4 @@
-// dryft:implements core.context
-import picomatch from "picomatch";
+﻿import picomatch from "picomatch";
 
 import { listRepositoryFiles } from "./file-list.js";
 import type {

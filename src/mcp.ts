@@ -1,5 +1,4 @@
-// dryft:implements core.mcp
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+﻿import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
@@ -55,13 +54,13 @@ export function createMcpServer(options: RunMcpOptions): Server {
       {
         name: "dryft_list_features",
         description:
-          "List all features tracked in the dryft manifest, including status, owner, and file/marker counts.",
+          "List all features tracked in the dryft manifest, including status, owner, and file counts.",
         inputSchema: { type: "object", properties: {} }
       },
       {
         name: "dryft_get_feature",
         description:
-          "Get full details for a feature: status, owner, declared path globs, member files (marker- or path-sourced), and per-role markers.",
+          "Get full details for a feature: status, owner, declared path globs, and member files.",
         inputSchema: {
           type: "object",
           properties: {
@@ -77,7 +76,7 @@ export function createMcpServer(options: RunMcpOptions): Server {
       {
         name: "dryft_features_for_file",
         description:
-          "List the features a given file belongs to (via marker comment or via path glob). Use this before editing a file so you know which feature you are touching.",
+          "List the features a given file belongs to via path globs. Use this before editing a file so you know which feature you are touching.",
         inputSchema: {
           type: "object",
           properties: {
@@ -93,7 +92,7 @@ export function createMcpServer(options: RunMcpOptions): Server {
       {
         name: "dryft_files_for_feature",
         description:
-          "List all files that belong to a feature (union of marker- and path-sourced files).",
+          "List all files that belong to a feature by matching its path globs.",
         inputSchema: {
           type: "object",
           properties: {

@@ -1,5 +1,4 @@
-// dryft:implements core.cli
-export { evaluateCi, getChangedFiles } from "./ci.js";
+﻿export { evaluateCi, getChangedFiles } from "./ci.js";
 export {
   buildFeatureIndex,
   computeFeatureIndex,
@@ -10,7 +9,7 @@ export {
   searchFeatures
 } from "./context.js";
 export { runInfer } from "./infer.js";
-export { createAgentInstructions, createGithubWorkflow, createStarterManifest } from "./init.js";
+export { createAgentInstructions, createMcpConfig, createStarterManifest } from "./init.js";
 export { isValidFeatureId, loadManifest, parseManifestContent } from "./manifest.js";
 export { createMcpServer, runMcp } from "./mcp.js";
 export {

@@ -1,7 +1,6 @@
-// dryft:verifies core.cli
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,7 +18,7 @@ test("package bin points to the built CLI file", async () => {
   await access(binPath);
 });
 
-test("dryft init writes starter manifest, agent instructions, and workflow", async () => {
+test("dryft init writes starter manifest, agent instructions, and MCP config", async () => {
   const dir = await mkdtemp(join(tmpdir(), "dryft-cli-init-"));
 
   await runCli(["init", "--project", "Example"], dir);
@@ -30,29 +29,10 @@ test("dryft init writes starter manifest, agent instructions, and workflow", asy
     /dryft_features_for_file/
   );
   assert.match(
-    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
-    /uses: dijla-ventures-llc\/dryft-action@v1/
+    await readFile(join(dir, ".mcp.json"), "utf8"),
+    /@dijla-ventures-llc\/dryft@latest/
   );
-  assert.match(
-    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
-    /actions: read/
-  );
-  assert.match(
-    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
-    /json-output: dryft-report\.json/
-  );
-  assert.match(
-    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
-    /name: Upload Dryft SARIF to code scanning[\s\S]*continue-on-error: true/
-  );
-  assert.match(
-    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
-    /name: dryft-sarif/
-  );
-  assert.match(
-    await readFile(join(dir, ".github", "workflows", "dryft.yml"), "utf8"),
-    /uses: actions\/upload-artifact@v4/
-  );
+  await assert.rejects(() => stat(join(dir, ".github")));
 });
 
 test("dryft scan emits JSON listing path-matched features", async () => {

@@ -77,6 +77,18 @@ features:
     status: active
     owner: distribution
     paths:
+      - .agents/plugins/**
       - .codex-plugin/**
       - .mcp.json
       - skills/**
+  - id: dist.package
+    title: Package metadata and documentation
+    status: active
+    owner: distribution
+    paths:
+      - README.md
+      - CHANGELOG.md
+      - LICENSE
+      - package.json
+      - package-lock.json
+      - tsconfig.json

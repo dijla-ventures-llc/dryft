@@ -1,36 +1,70 @@
 # Dryft
 
-**A queryable feature index your AI agents read before editing your codebase.**
+**A queryable feature index for AI coding agents.**
 
-[![npm](https://img.shields.io/npm/v/%40dijla-ventures-llc%2Fdryft)](https://www.npmjs.com/package/@dijla-ventures-llc/dryft) · Apache-2.0
+[![npm](https://img.shields.io/npm/v/%40dijla-ventures-llc%2Fdryft)](https://www.npmjs.com/package/@dijla-ventures-llc/dryft)
 
-## What it does
+Dryft gives coding agents a structured map of the features in a repository before they edit files. Instead of relying on stale prose docs, agents can ask Dryft which feature owns a path, which files belong to a feature, and what feature IDs already exist.
 
-Modern AI coding agents (Claude Code, Cursor, Codex, Aider) invent a new naming convention every PR because `CLAUDE.md` is unstructured prose. Dryft replaces that prose with a structured `dryft.yml` manifest mapping features → path globs, and exposes those mappings as MCP tools agents can call before editing.
+The wedge is simple: agents read the feature map first, then stay inside the product boundary they are changing.
 
-When an agent is about to edit `src/auth/login.ts`, it asks Dryft *"what feature does this file belong to?"* and gets back `auth.magic-link.login` — the exact id the manifest declared. No drift, no invented synonyms, no fragmented architecture.
-
-## Quick start
-
-### 1. Generate a manifest
-
-With `ANTHROPIC_API_KEY` set:
+## Install
 
 ```sh
-npx @dijla-ventures-llc/dryft init --infer
+npm install -D @dijla-ventures-llc/dryft
 ```
 
-This asks Claude to propose a feature taxonomy by reading your repo's file tree, then writes `dryft.yml`. Review the output; tweak as needed.
-
-Or start from a hand-edited template:
+Initialize a feature manifest and local MCP config:
 
 ```sh
-npx @dijla-ventures-llc/dryft init
+npx dryft init
 ```
 
-### 2. Wire the MCP server into your agent
+This writes:
 
-**Claude Code** — add to `.mcp.json` at the repo root:
+- `dryft.yml`: the feature map
+- `AGENTS.md`: agent instructions
+- `.mcp.json`: local MCP config for agents that read repo MCP settings
+
+## Quick Start
+
+List the features in the repo:
+
+```sh
+npx dryft context list
+```
+
+Find which feature owns a file:
+
+```sh
+npx dryft context file src/auth/login.ts
+```
+
+Inspect one feature:
+
+```sh
+npx dryft context feature auth.magic-link.login
+```
+
+Start the MCP server:
+
+```sh
+npx dryft mcp
+```
+
+## MCP
+
+Dryft exposes these MCP tools:
+
+| Tool | Use |
+| --- | --- |
+| `dryft_list_features` | List every feature with id, status, title, file count, and owner. |
+| `dryft_get_feature` | Get full details for one feature, including matching files. |
+| `dryft_features_for_file` | Find the feature or features a file belongs to. Agents should call this before editing. |
+| `dryft_files_for_feature` | List all files that match a feature's path globs. |
+| `dryft_search_features` | Search feature id, title, and owner. |
+
+Example MCP config:
 
 ```json
 {
@@ -43,50 +77,38 @@ npx @dijla-ventures-llc/dryft init
 }
 ```
 
-**Cursor** — add the same block to `.cursor/mcp.json`.
+## Codex Plugin
 
-**Codex** — add this repo to a plugin marketplace, then install Dryft via the plugin directory. The plugin ships a `SKILL.md` that teaches Codex when to call each tool.
+This repository is also a Codex plugin source. It includes:
 
-### 3. Verify
-
-Restart your agent. Ask *"what features does this repo have?"* — the agent should call `dryft_list_features` and respond with the manifest's contents.
-
-## MCP tools
-
-| Tool | Use |
-|---|---|
-| `dryft_list_features` | List every feature (id, status, title, file count, owner). |
-| `dryft_get_feature` | Full details for one feature, including its files. |
-| `dryft_features_for_file` | Find the feature(s) a file belongs to. Call this before editing any file. |
-| `dryft_files_for_feature` | List all files that match a feature's path globs. |
-| `dryft_search_features` | Substring search across id, title, and owner. |
-
-## CLI
-
-Same queries, terminal flavor (Markdown by default, `--format json` for machine output):
-
-```sh
-dryft context list                                  # tabular feature list
-dryft context feature auth.magic-link.login         # full feature detail
-dryft context file src/auth/login.ts                # features for a file
-dryft context search login                          # substring search
-dryft scan                                          # manifest sanity + summary
-dryft mcp                                           # start the MCP server (stdio)
+```text
+.codex-plugin/plugin.json
+.mcp.json
+skills/dryft/SKILL.md
+.agents/plugins/marketplace.json
 ```
 
-## The manifest
+Add the plugin marketplace:
 
-`dryft.yml`, `dryft.yaml`, or `dryft.json` at the repo root:
+```sh
+codex plugin marketplace add dijla-ventures-llc/dryft --ref main
+```
+
+Then install Dryft from the Codex plugin directory. The plugin bundles the MCP config and a skill that instructs Codex to query Dryft before editing files.
+
+## Manifest
+
+`dryft.yml`, `dryft.yaml`, or `dryft.json` is the source of truth:
 
 ```yaml
 project:
   name: my-app
 features:
-  - id: auth.magic-link.login          # lowercase hierarchical
+  - id: auth.magic-link.login
     title: Magic link login
-    status: active                     # active | deprecated | archived
-    owner: platform                    # optional
-    paths:                             # picomatch globs
+    status: active
+    owner: platform
+    paths:
       - src/auth/**
       - test/auth/**
   - id: billing.checkout
@@ -96,48 +118,64 @@ features:
       - src/billing/**
 ```
 
-Feature ids use lowercase hierarchical segments (dots between segments, kebab-case within a segment): `auth.magic-link.login`, `core.observability`, `ops.cron.nightly-cleanup`.
+Feature IDs use lowercase hierarchical segments, such as `auth.magic-link.login`, `core.observability`, or `ops.cron.nightly-cleanup`.
 
-Features without `paths` are still listable but won't auto-resolve from a file path. Add `paths` to make a feature actually findable.
+Supported statuses:
 
-## Quality gates (optional)
+- `active`: current feature area
+- `deprecated`: still present but should be handled carefully
+- `archived`: should not receive new changes
 
-If you want CI checks for change scope, `dryft ci --base origin/main` reports two kinds of issues:
+Features without `paths` are visible in listings but cannot be resolved from file paths. Add `paths` to make a feature useful to agents.
 
-- `archived-feature-touched` (error) — a changed file matches an archived feature's paths.
-- `deprecated-feature-touched` (warning) — a changed file matches a deprecated feature's paths.
+## CLI
 
-That's the whole gate. Dryft does **not** enforce "every file must declare a feature" — the manifest's path globs decide membership.
-
-Wire it into GitHub Actions via the [`dryft-action`](https://github.com/dijla-ventures-llc/dryft-action) wrapper:
-
-```yaml
-- uses: dijla-ventures-llc/dryft-action@v1
-  with:
-    base: origin/${{ github.base_ref }}
-    format: sarif
-    output: dryft.sarif
+```sh
+dryft init [--project <name>]
+dryft init --infer [--model <id>] [--dry-run]
+dryft scan [--format text|json|sarif]
+dryft ci --base <ref> [--format text|json|sarif]
+dryft context list [--format text|json]
+dryft context feature <id> [--format text|json]
+dryft context file <path> [--format text|json]
+dryft context search <query> [--format text|json]
+dryft mcp
 ```
 
-See the [dryft-action](https://github.com/dijla-ventures-llc/dryft-action) README for the full PR workflow template (SARIF upload, JSON report artifact, etc.).
+`dryft init --infer` is optional. It uses `ANTHROPIC_API_KEY` to ask a model to propose an initial feature map from the repo file tree. Review the generated manifest before committing it.
 
-## Why this exists
+## Drift Checks
 
-- **One source of truth for feature names.** No more "is it `checkout`, `cart-checkout`, or `billing.checkout`?" — the manifest decides.
-- **Agents stay in scope.** Before editing, they query Dryft and align with the existing taxonomy instead of inventing parallel names.
-- **Cheap to maintain.** Just path globs in a YAML file. No inline markers, no agent-side bookkeeping.
-- **Distribution-ready.** Ships as an npm package (CLI + MCP server) and a Codex/Claude-Code plugin (one-click install via marketplace).
+The core agent workflow is MCP-first, but the CLI can still evaluate pull request changes:
 
-## Install paths
+```sh
+npx dryft ci --base origin/main
+```
 
-- **npm package** (CLI + MCP server): `npm i -D @dijla-ventures-llc/dryft`
-- **Codex / Claude Code plugin**: point your marketplace at this repo
+The v0.2 policy is intentionally narrow:
+
+- `archived-feature-touched`: error when a changed file matches an archived feature
+- `deprecated-feature-touched`: warning when a changed file matches a deprecated feature
+
+`dryft scan` validates the manifest and summarizes feature file counts:
+
+```sh
+npx dryft scan --format text
+npx dryft scan --format json
+```
+
+## Why This Exists
+
+- Agents can query feature ownership before editing.
+- Teams get one stable vocabulary for product and platform areas.
+- The manifest is cheap to maintain because path globs do the mapping.
+- The same feature index works through CLI, MCP, and Codex plugin surfaces.
 
 ## Limits
 
-- Path globs are the only relationship type. If you need to distinguish "this file *implements* feature X" from "this file *tests* feature X," use separate path conventions (e.g., `src/auth/**` for impl, `test/auth/**` for tests) — Dryft doesn't model roles directly.
-- The MCP server caches the index in memory after first build. If you edit `dryft.yml`, restart the server.
-- The LLM-based `--infer` is best-effort; review the output before committing.
+- Feature membership is path-based.
+- The MCP server caches the feature index after startup. Restart it after editing `dryft.yml`.
+- Generated manifests from `--infer` are a bootstrap aid, not a source of truth until reviewed.
 
 ## License
 

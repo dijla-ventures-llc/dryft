@@ -1,5 +1,4 @@
-// dryft:implements core.scanner
-import picomatch from "picomatch";
+﻿import picomatch from "picomatch";
 
 import { listRepositoryFiles, normalizeInputFiles } from "./file-list.js";
 import type {

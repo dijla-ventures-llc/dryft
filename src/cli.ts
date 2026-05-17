@@ -1,6 +1,5 @@
-#!/usr/bin/env node
-// dryft:implements core.cli
-import { mkdir, writeFile } from "node:fs/promises";
+﻿#!/usr/bin/env node
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { evaluateCi } from "./ci.js";
@@ -14,7 +13,7 @@ import {
 import { runInfer } from "./infer.js";
 import {
   createAgentInstructions,
-  createGithubWorkflow,
+  createMcpConfig,
   createStarterManifest
 } from "./init.js";
 import { loadManifest } from "./manifest.js";
@@ -78,11 +77,7 @@ async function runInit(rawArgs: string[]): Promise<void> {
     }
     console.log(`Wrote ${result.path}. Review before committing.`);
     await writeIfAbsent(path.join(cwd, "AGENTS.md"), createAgentInstructions());
-    await mkdir(path.join(cwd, ".github", "workflows"), { recursive: true });
-    await writeIfAbsent(
-      path.join(cwd, ".github", "workflows", "dryft.yml"),
-      createGithubWorkflow()
-    );
+    await writeIfAbsent(path.join(cwd, ".mcp.json"), createMcpConfig());
     console.log("Dryft initialized.");
     return;
   }
@@ -91,11 +86,7 @@ async function runInit(rawArgs: string[]): Promise<void> {
 
   await writeIfAbsent(path.join(cwd, "dryft.yml"), createStarterManifest(projectName));
   await writeIfAbsent(path.join(cwd, "AGENTS.md"), createAgentInstructions());
-  await mkdir(path.join(cwd, ".github", "workflows"), { recursive: true });
-  await writeIfAbsent(
-    path.join(cwd, ".github", "workflows", "dryft.yml"),
-    createGithubWorkflow()
-  );
+  await writeIfAbsent(path.join(cwd, ".mcp.json"), createMcpConfig());
 
   console.log("Dryft initialized.");
 }

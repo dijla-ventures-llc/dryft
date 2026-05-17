@@ -1,5 +1,4 @@
-// dryft:implements core.reporting
-import type {
+﻿import type {
   DryftIssue,
   DryftReport,
   FeatureDetail,
@@ -96,7 +95,7 @@ export function toContextListReport(summaries: FeatureSummary[]): string {
   ];
   for (const summary of summaries) {
     lines.push(
-      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.fileCount} | ${summary.owner ?? "—"} |`
+      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.fileCount} | ${summary.owner ?? "-"} |`
     );
   }
   return `${lines.join("\n")}\n`;
@@ -160,7 +159,7 @@ export function toContextSearchReport(
   );
   for (const summary of summaries) {
     lines.push(
-      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.owner ?? "—"} |`
+      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.owner ?? "-"} |`
     );
   }
   return `${lines.join("\n")}\n`;

@@ -1,5 +1,4 @@
-// dryft:implements core.manifest
-import { readFile } from "node:fs/promises";
+﻿import { readFile } from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
 

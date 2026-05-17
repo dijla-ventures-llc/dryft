@@ -1,5 +1,4 @@
-// dryft:implements core.infer
-import Anthropic from "@anthropic-ai/sdk";
+﻿import Anthropic from "@anthropic-ai/sdk";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -43,7 +42,7 @@ export async function runInfer(options: InferOptions): Promise<InferResult> {
   const client = options.client ?? createDefaultClient();
   const files = await listRepositoryFiles(options.cwd);
   if (files.length === 0) {
-    throw new Error("No files found in repo — nothing to infer from.");
+    throw new Error("No files found in repo; nothing to infer from.");
   }
 
   const prompt = buildInferPrompt(options.cwd, files);

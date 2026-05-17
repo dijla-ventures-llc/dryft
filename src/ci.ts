@@ -1,5 +1,4 @@
-// dryft:implements core.ci
-import { execFile } from "node:child_process";
+﻿import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import picomatch from "picomatch";
 
