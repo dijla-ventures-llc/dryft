@@ -81,3 +81,48 @@ export interface CiOptions {
   baseRef?: string;
   changedFiles?: string[];
 }
+
+export type MembershipSource = "marker" | "path";
+
+export interface FeatureMembership {
+  featureId: string;
+  source: MembershipSource;
+}
+
+export interface FileMembership {
+  file: string;
+  source: MembershipSource;
+}
+
+export interface FeatureSummary {
+  id: string;
+  title: string;
+  status: FeatureStatus;
+  owner?: string;
+  fileCount: number;
+  markerCount: number;
+}
+
+export interface FeatureDetail {
+  feature: DryftFeature;
+  files: FileMembership[];
+  markers: {
+    implements: DryftMarker[];
+    verifies: DryftMarker[];
+    relates: DryftMarker[];
+  };
+}
+
+export interface FeatureIndexEntry {
+  feature: DryftFeature;
+  markerFiles: string[];
+  pathFiles: string[];
+  allFiles: string[];
+  markers: DryftMarker[];
+}
+
+export interface FeatureIndex {
+  manifest: DryftManifest;
+  features: Record<string, FeatureIndexEntry>;
+  fileToFeatures: Map<string, FeatureMembership[]>;
+}
