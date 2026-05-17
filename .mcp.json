@@ -1,0 +1,6 @@
+{
+  "dryft": {
+    "command": "npx",
+    "args": ["-y", "@dijla-ventures-llc/dryft@latest", "mcp"]
+  }
+}

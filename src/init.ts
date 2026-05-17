@@ -17,22 +17,20 @@ export function createStarterManifest(projectName = "dryft-project"): string {
 
 export function createAgentInstructions(): string {
   return [
-    "# Dryft Feature Tagging",
+    "# Dryft Feature Index",
     "",
-    "When adding or changing feature code, include a file-level Dryft marker near the top of each changed source or test file.",
+    "This repository uses Dryft to track features. The `dryft.yml` manifest is the source of truth for what features exist and which paths belong to them.",
     "",
-    "Use these markers:",
+    "## When editing code",
     "",
-    "- `dryft:implements <feature-id>` for production code that implements a feature.",
-    "- `dryft:verifies <feature-id>` for tests that verify a feature.",
-    "- `dryft:relates <feature-id>` for config, docs, migrations, or supporting files.",
+    "1. Before editing, identify the feature(s) your changes belong to. If a Dryft MCP server is available, call `dryft_features_for_file` with the file path. Otherwise read `dryft.yml` and match the file against each feature's `paths` globs.",
+    "2. If your change spans an existing feature, keep working — the manifest already covers you.",
+    "3. If your change introduces a new capability that doesn't fit any existing feature, add a new entry under `features:` in `dryft.yml` in the same commit. Use a lowercase hierarchical id (e.g., `auth.magic-link.login`) and a `paths:` glob that covers the new files.",
+    "4. If you touch a `deprecated` or `archived` feature, surface this in your PR description.",
     "",
-    "Feature IDs are defined in `dryft.yml` and use lowercase hierarchical names such as `auth.magic-link.login`.",
-    "Do not invent feature IDs. If no existing feature fits, update `dryft.yml` in the same change.",
+    "## One-shot prompt for coding agents",
     "",
-    "One-shot prompt for coding agents:",
-    "",
-    "You are implementing a feature in a repository that uses Dryft. Before editing code, read `dryft.yml` and identify the correct feature ID. Add or preserve file-level Dryft markers in every changed source, test, config, migration, and docs file: `dryft:implements <feature-id>` for implementation files, `dryft:verifies <feature-id>` for tests, and `dryft:relates <feature-id>` for supporting files. If no existing feature fits, update `dryft.yml` in the same change. Before finishing, run `npx @dijla-ventures-llc/dryft scan --format text` and fix unknown, inactive, or missing markers.",
+    "You are implementing a feature in a repository that uses Dryft. Before editing code, read `dryft.yml` (or call `dryft_list_features` / `dryft_features_for_file` if a Dryft MCP server is registered) to identify which features your changes belong to. If your change adds a new capability that no existing feature covers, add a new feature entry to `dryft.yml` in the same commit using a lowercase hierarchical id and a `paths:` glob covering the new files. When finished, run `npx @dijla-ventures-llc/dryft scan` to confirm the manifest is valid.",
     ""
   ].join("\n");
 }

@@ -18,9 +18,15 @@ export async function loadManifest(
     ? path.resolve(cwd, manifestPath)
     : await findManifestPath(cwd);
   const raw = await readFile(resolvedPath, "utf8");
-  const parsed = parseManifest(raw, resolvedPath);
+  return parseManifestContent(raw, resolvedPath);
+}
 
-  return validateManifest(parsed, resolvedPath);
+export function parseManifestContent(
+  raw: string,
+  virtualPath: string
+): DryftManifest {
+  const parsed = parseManifest(raw, virtualPath);
+  return validateManifest(parsed, virtualPath);
 }
 
 export function isValidFeatureId(featureId: string): boolean {

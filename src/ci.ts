@@ -1,16 +1,9 @@
 // dryft:implements core.ci
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { promisify } from "node:util";
 import picomatch from "picomatch";
 
-import {
-  isSourceFile,
-  listRepositoryFiles,
-  normalizeInputFiles
-} from "./file-list.js";
-import { parseMarkers } from "./markers.js";
+import { listRepositoryFiles, normalizeInputFiles } from "./file-list.js";
 import { scanRepository } from "./scanner.js";
 import type { CiOptions, DryftIssue, DryftReport } from "./types.js";
 
@@ -25,68 +18,36 @@ export async function evaluateCi(options: CiOptions): Promise<DryftReport> {
     manifest: options.manifest,
     files: await listRepositoryFiles(options.cwd)
   });
-  const issues: DryftIssue[] = [...scan.issues];
-  const changedMarkersByFeature = new Map<string, Set<string>>();
 
-  for (const file of normalizedChangedFiles) {
-    const absolutePath = path.join(options.cwd, file);
-    let content: string;
+  const issues: DryftIssue[] = [];
 
-    try {
-      content = await readFile(absolutePath, "utf8");
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        continue;
-      }
-      throw error;
+  for (const feature of options.manifest.features) {
+    if (!feature.paths || feature.paths.length === 0) {
+      continue;
     }
-
-    const markers = parseMarkers(content, file);
-
-    if (isSourceFile(file) && markers.length === 0) {
-      issues.push({
-        code: "missing-marker",
-        severity: "error",
-        message: "Changed source file has no Dryft marker.",
-        file
-      });
+    if (feature.status !== "deprecated" && feature.status !== "archived") {
       continue;
     }
 
-    for (const marker of markers) {
-      const feature = options.manifest.features.find(
-        (candidate) => candidate.id === marker.featureId
-      );
-      if (!feature) {
-        continue;
-      }
-
-      if (!changedMarkersByFeature.has(marker.featureId)) {
-        changedMarkersByFeature.set(marker.featureId, new Set());
-      }
-      changedMarkersByFeature.get(marker.featureId)?.add(file);
-
-      if (feature.paths?.length && !picomatch.isMatch(file, feature.paths)) {
-        issues.push({
-          code: "path-affinity-mismatch",
-          severity: "warning",
-          message: `Changed file is outside declared paths for feature "${marker.featureId}".`,
-          file,
-          line: marker.line,
-          featureId: marker.featureId
-        });
-      }
+    const matcher = picomatch(feature.paths);
+    const touchedFiles = normalizedChangedFiles.filter((file) => matcher(file));
+    if (touchedFiles.length === 0) {
+      continue;
     }
-  }
 
-  for (const featureId of changedMarkersByFeature.keys()) {
-    const references = scan.features[featureId];
-    if (references?.implements.length && references.verifies.length === 0) {
+    const severity = feature.status === "archived" ? "error" : "warning";
+    const code =
+      feature.status === "archived"
+        ? "archived-feature-touched"
+        : "deprecated-feature-touched";
+
+    for (const file of touchedFiles) {
       issues.push({
-        code: "missing-verification",
-        severity: "warning",
-        message: `Feature "${featureId}" has implementation references but no verification references.`,
-        featureId
+        code,
+        severity,
+        message: `Changed file touches ${feature.status} feature "${feature.id}".`,
+        file,
+        featureId: feature.id
       });
     }
   }
