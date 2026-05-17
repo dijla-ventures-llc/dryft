@@ -33,6 +33,7 @@ features:
     owner: core
     paths:
       - .github/workflows/dryft.yml
+      - scripts/run-tests.mjs
       - src/ci.ts
       - src/vendor.d.ts
       - test/ci.test.ts

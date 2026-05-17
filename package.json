@@ -1,6 +1,6 @@
 {
   "name": "@dijla-ventures-llc/dryft",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Static analysis for feature integrity in the age of AI.",
   "license": "Apache-2.0",
   "type": "module",
@@ -34,7 +34,7 @@
   "scripts": {
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "build": "npm run clean && tsc -p tsconfig.json",
-    "test": "npm run build && node --test \"dist/**/*.test.js\""
+    "test": "npm run build && node scripts/run-tests.mjs"
   },
   "dependencies": {
     "picomatch": "^4.0.2",
