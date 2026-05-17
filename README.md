@@ -105,6 +105,28 @@ Before editing src/auth/login.ts:
 4. If nothing fits, add a new dryft.yml feature entry in the same change.
 ```
 
+One-shot prompt for coding agents:
+
+```text
+You are working in a repository that uses Dryft as its feature map and MCP controller.
+
+Before editing:
+1. Read dryft.yml or call dryft_list_features.
+2. For every file you plan to touch, call dryft_features_for_file with the repo-relative path.
+3. Name the feature IDs you are touching in your plan.
+
+While editing:
+- Keep changes inside the matched feature's path boundaries when possible.
+- If a new file does not match an existing feature, search with dryft_search_features before creating a new feature.
+- If no existing feature fits, update dryft.yml in the same change with a lowercase hierarchical id and paths that cover the new files.
+- If you touch a deprecated or archived feature, call that out explicitly.
+
+Before finishing:
+1. Run npx @dijla-ventures-llc/dryft scan --format text.
+2. Fix manifest or path problems.
+3. Summarize the feature IDs touched and any dryft.yml changes.
+```
+
 The useful MCP tools are:
 
 | Tool | Use |
