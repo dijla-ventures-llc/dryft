@@ -1,5 +1,4 @@
 // dryft:implements core.cli
-// dryft:implements bogus.feature.id
 export { evaluateCi, getChangedFiles } from "./ci.js";
 export { createAgentInstructions, createGithubWorkflow, createStarterManifest } from "./init.js";
 export { isValidFeatureId, loadManifest } from "./manifest.js";
