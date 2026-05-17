@@ -1,5 +1,4 @@
-// dryft:relates core.ci
-import { readdir } from "node:fs/promises";
+﻿import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";

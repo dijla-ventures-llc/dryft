@@ -1,4 +1,3 @@
-# dryft:relates core.manifest
 project:
   name: dryft
 features:
@@ -11,15 +10,8 @@ features:
       - src/manifest.ts
       - src/types.ts
       - test/manifest.test.ts
-  - id: core.markers
-    title: Language-agnostic marker parsing
-    status: active
-    owner: core
-    paths:
-      - src/markers.ts
-      - test/markers.test.ts
   - id: core.scanner
-    title: Repository feature-reference scanning
+    title: Repository file scanning and feature grouping
     status: active
     owner: core
     paths:
@@ -38,7 +30,7 @@ features:
       - src/vendor.d.ts
       - test/ci.test.ts
   - id: core.reporting
-    title: Text, JSON, and SARIF reporting
+    title: Text, JSON, SARIF, and Markdown reporting
     status: active
     owner: core
     paths:
@@ -59,3 +51,44 @@ features:
       - src/cli.ts
       - src/index.ts
       - test/cli.test.ts
+  - id: core.context
+    title: Feature index query layer
+    status: active
+    owner: core
+    paths:
+      - src/context.ts
+      - test/context.test.ts
+  - id: core.mcp
+    title: MCP server for AI agent feature queries
+    status: active
+    owner: core
+    paths:
+      - src/mcp.ts
+      - test/mcp.test.ts
+  - id: core.infer
+    title: LLM-based manifest inference
+    status: active
+    owner: core
+    paths:
+      - src/infer.ts
+      - test/infer.test.ts
+  - id: dist.plugin
+    title: Codex plugin packaging
+    status: active
+    owner: distribution
+    paths:
+      - .agents/plugins/**
+      - .codex-plugin/**
+      - .mcp.json
+      - skills/**
+  - id: dist.package
+    title: Package metadata and documentation
+    status: active
+    owner: distribution
+    paths:
+      - README.md
+      - CHANGELOG.md
+      - LICENSE
+      - package.json
+      - package-lock.json
+      - tsconfig.json

@@ -1,5 +1,4 @@
-// dryft:verifies core.reporting
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import test from "node:test";
 
 import { toJsonReport, toSarifReport, toTextReport } from "../src/reporters.js";
@@ -11,26 +10,22 @@ const report: DryftReport = {
   passed: false,
   baseRef: "origin/main",
   scannedFiles: 1,
-  changedFiles: ["src/auth.ts"],
-  references: [],
+  changedFiles: ["src/auth/legacy.ts"],
   features: {
-    "auth.magic-link.login": {
-      feature: {
-        id: "auth.magic-link.login",
-        title: "Magic link login",
-        status: "active"
-      },
-      implements: [],
-      verifies: [],
-      relates: []
+    "auth.legacy": {
+      id: "auth.legacy",
+      title: "Legacy auth",
+      status: "archived",
+      fileCount: 1
     }
   },
   issues: [
     {
-      code: "missing-marker",
+      code: "archived-feature-touched",
       severity: "error",
-      message: "Changed source file has no Dryft marker.",
-      file: "src/auth.ts"
+      message: 'Changed file touches archived feature "auth.legacy".',
+      file: "src/auth/legacy.ts",
+      featureId: "auth.legacy"
     }
   ]
 };
@@ -39,7 +34,7 @@ test("toJsonReport emits stable machine-readable JSON", () => {
   const parsed = JSON.parse(toJsonReport(report)) as DryftReport;
 
   assert.equal(parsed.mode, "ci");
-  assert.equal(parsed.issues[0].code, "missing-marker");
+  assert.equal(parsed.issues[0].code, "archived-feature-touched");
 });
 
 test("toSarifReport emits GitHub-compatible SARIF results", () => {
@@ -47,7 +42,7 @@ test("toSarifReport emits GitHub-compatible SARIF results", () => {
 
   assert.equal(sarif.version, "2.1.0");
   assert.equal(sarif.runs[0].tool.driver.name, "Dryft");
-  assert.equal(sarif.runs[0].results[0].ruleId, "missing-marker");
+  assert.equal(sarif.runs[0].results[0].ruleId, "archived-feature-touched");
 });
 
 test("toTextReport summarizes pass state and issue counts", () => {
@@ -55,5 +50,5 @@ test("toTextReport summarizes pass state and issue counts", () => {
 
   assert.match(text, /Dryft CI failed/);
   assert.match(text, /1 error/);
-  assert.match(text, /src\/auth\.ts/);
+  assert.match(text, /src\/auth\/legacy\.ts/);
 });

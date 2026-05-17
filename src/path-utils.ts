@@ -1,5 +1,4 @@
-// dryft:implements core.scanner
-import path from "node:path";
+﻿import path from "node:path";
 
 export function toPosixPath(filePath: string): string {
   return filePath.split(path.sep).join("/");

@@ -1,79 +1,108 @@
-# dryft
+# Dryft
 
-[npm package: `@dijla-ventures-llc/dryft`](https://www.npmjs.com/package/@dijla-ventures-llc/dryft)
+**A queryable feature index for AI coding agents.**
 
-Static analysis for feature integrity in the age of AI.
+[![npm](https://img.shields.io/npm/v/%40dijla-ventures-llc%2Fdryft)](https://www.npmjs.com/package/@dijla-ventures-llc/dryft)
 
-Dryft is a lightweight feature-drift guard for fast-moving, AI-assisted
-engineering teams. Developers and coding agents tag changed files with feature
-intent, then CI validates those tags against a checked-in feature catalog.
+Dryft gives coding agents a structured map of the features in a repository before they edit files. Instead of relying on stale prose docs, agents can ask Dryft which feature owns a path, which files belong to a feature, and what feature IDs already exist.
+
+The wedge is simple: agents read the feature map first, then stay inside the product boundary they are changing.
 
 ## Install
-
-Use the npm package in a repository that should be checked for feature drift:
 
 ```sh
 npm install -D @dijla-ventures-llc/dryft
 ```
 
-The package exposes a `dryft` binary:
+Initialize a feature manifest and local MCP config:
 
 ```sh
 npx dryft init
-npx dryft scan --format text
-npx dryft ci --base origin/main --format json
 ```
 
-Use local installs for application repos so CI and contributors run the same
-Dryft version. Use `npx @dijla-ventures-llc/dryft ...` when bootstrapping a
-repo that has not installed Dryft yet.
+This writes:
 
-## Core Idea
+- `dryft.yml`: the feature map
+- `AGENTS.md`: agent instructions
+- `.mcp.json`: local MCP config for agents that read repo MCP settings
 
-Dryft uses file-level markers that can live inside any comment style. The
-scanner reads line text rather than language ASTs, so the same marker vocabulary
-works across TypeScript, Python, Go, SQL, Terraform, Markdown, YAML, and most
-other repository files.
+## Quick Start
 
-Use `dryft:implements` in production code that implements a feature. This tells
-reviewers and CI which product capability the file belongs to.
+List the features in the repo:
 
-```ts
-// dryft:implements auth.magic-link.login
+```sh
+npx dryft context list
+```
 
-export async function sendMagicLink(email: string) {
-  // feature implementation
+Find which feature owns a file:
+
+```sh
+npx dryft context file src/auth/login.ts
+```
+
+Inspect one feature:
+
+```sh
+npx dryft context feature auth.magic-link.login
+```
+
+Start the MCP server:
+
+```sh
+npx dryft mcp
+```
+
+## MCP
+
+Dryft exposes these MCP tools:
+
+| Tool | Use |
+| --- | --- |
+| `dryft_list_features` | List every feature with id, status, title, file count, and owner. |
+| `dryft_get_feature` | Get full details for one feature, including matching files. |
+| `dryft_features_for_file` | Find the feature or features a file belongs to. Agents should call this before editing. |
+| `dryft_files_for_feature` | List all files that match a feature's path globs. |
+| `dryft_search_features` | Search feature id, title, and owner. |
+
+Example MCP config:
+
+```json
+{
+  "mcpServers": {
+    "dryft": {
+      "command": "npx",
+      "args": ["-y", "@dijla-ventures-llc/dryft@latest", "mcp"]
+    }
+  }
 }
 ```
 
-Use `dryft:verifies` in tests that prove a feature still works. This lets Dryft
-warn when implementation changes have no nearby verification signal.
+## Codex Plugin
 
-```ts
-// dryft:verifies auth.magic-link.login
+This repository is also a Codex plugin source. It includes:
 
-test("sends a magic link to a known user", async () => {
-  // feature test
-});
+```text
+.codex-plugin/plugin.json
+.mcp.json
+skills/dryft/SKILL.md
+.agents/plugins/marketplace.json
 ```
 
-Use `dryft:relates` in supporting files such as config, docs, prompts,
-migrations, and workflows. This captures work that affects a feature without
-pretending the file directly implements or verifies it.
+Add the plugin marketplace:
 
-```yaml
-# dryft:relates auth.magic-link.login
-MAGIC_LINK_TOKEN_TTL_SECONDS: 900
+```sh
+codex plugin marketplace add dijla-ventures-llc/dryft --ref main
 ```
+
+Then install Dryft from the Codex plugin directory. The plugin bundles the MCP config and a skill that instructs Codex to query Dryft before editing files.
 
 ## Manifest
 
-The manifest is the source of truth for feature IDs. Keep it checked in as
-`dryft.yml`, `dryft.yaml`, or `dryft.json`.
+`dryft.yml`, `dryft.yaml`, or `dryft.json` is the source of truth:
 
 ```yaml
 project:
-  name: Example
+  name: my-app
 features:
   - id: auth.magic-link.login
     title: Magic link login
@@ -82,165 +111,72 @@ features:
     paths:
       - src/auth/**
       - test/auth/**
+  - id: billing.checkout
+    title: Checkout flow
+    status: active
+    paths:
+      - src/billing/**
 ```
 
-Why use this: Dryft prevents agents and developers from inventing feature IDs in
-random files. Optional `paths` also let CI warn when a changed file claims to
-implement a feature but lives outside that feature's expected area.
+Feature IDs use lowercase hierarchical segments, such as `auth.magic-link.login`, `core.observability`, or `ops.cron.nightly-cleanup`.
 
-Feature IDs use lowercase hierarchical segments, such as
-`auth.magic-link.login`. Supported statuses are `active`, `deprecated`, and
-`archived`.
+Supported statuses:
 
-## Local Usage
+- `active`: current feature area
+- `deprecated`: still present but should be handled carefully
+- `archived`: should not receive new changes
 
-Initialize a repo:
+Features without `paths` are visible in listings but cannot be resolved from file paths. Add `paths` to make a feature useful to agents.
+
+## CLI
 
 ```sh
-npx dryft init --project "Acme App"
+dryft init [--project <name>]
+dryft init --infer [--model <id>] [--dry-run]
+dryft scan [--format text|json|sarif]
+dryft ci --base <ref> [--format text|json|sarif]
+dryft context list [--format text|json]
+dryft context feature <id> [--format text|json]
+dryft context file <path> [--format text|json]
+dryft context search <query> [--format text|json]
+dryft mcp
 ```
 
-Why use this: it creates `dryft.yml`, `AGENTS.md` tagging instructions, and a
-starter GitHub Actions workflow.
+`dryft init --infer` is optional. It uses `ANTHROPIC_API_KEY` to ask a model to propose an initial feature map from the repo file tree. Review the generated manifest before committing it.
 
-Scan the whole repository:
+## Drift Checks
+
+The core agent workflow is MCP-first, but the CLI can still evaluate pull request changes:
+
+```sh
+npx dryft ci --base origin/main
+```
+
+The v0.2 policy is intentionally narrow:
+
+- `archived-feature-touched`: error when a changed file matches an archived feature
+- `deprecated-feature-touched`: warning when a changed file matches a deprecated feature
+
+`dryft scan` validates the manifest and summarizes feature file counts:
 
 ```sh
 npx dryft scan --format text
+npx dryft scan --format json
 ```
 
-Why use this: it is the fast local sanity check before opening a pull request.
-It catches unknown feature IDs, inactive feature references, and malformed
-manifests.
+## Why This Exists
 
-Generate JSON for automation:
+- Agents can query feature ownership before editing.
+- Teams get one stable vocabulary for product and platform areas.
+- The manifest is cheap to maintain because path globs do the mapping.
+- The same feature index works through CLI, MCP, and Codex plugin surfaces.
 
-```sh
-npx dryft scan --format json > dryft-report.json
-```
+## Limits
 
-Why use this: JSON is the stable report format for dashboards, internal bots,
-or review automation.
+- Feature membership is path-based.
+- The MCP server caches the feature index after startup. Restart it after editing `dryft.yml`.
+- Generated manifests from `--infer` are a bootstrap aid, not a source of truth until reviewed.
 
-Run the same drift check CI runs:
+## License
 
-```sh
-npx dryft ci --base origin/main --format sarif > dryft.sarif
-```
-
-Why use this: `dryft ci` only evaluates files changed against the base ref and
-applies the pull-request policy.
-
-## GitHub Actions
-
-After `dryft init`, pull requests can run Dryft through the first-party action:
-
-```yaml
-name: Dryft
-
-on:
-  pull_request:
-
-jobs:
-  dryft:
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run Dryft
-        id: dryft
-        continue-on-error: true
-        uses: dijla-ventures-llc/dryft-action@v1
-        with:
-          base: origin/${{ github.base_ref }}
-          format: sarif
-          output: dryft.sarif
-          json-output: dryft-report.json
-
-      - name: Upload Dryft SARIF to code scanning
-        if: always()
-        continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: dryft.sarif
-
-      - name: Upload Dryft SARIF artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dryft-sarif
-          path: dryft.sarif
-
-      - name: Upload Dryft JSON report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dryft-report
-          path: dryft-report.json
-
-      - name: Fail on Dryft errors
-        if: steps.dryft.outcome == 'failure'
-        run: exit 1
-```
-
-Why use this: the Dryft action blocks real drift, uploads a JSON report for
-humans and future dashboards, and optionally feeds SARIF into GitHub Code
-Scanning.
-
-The JSON report is uploaded to the workflow run as an artifact named
-`dryft-report`. Open the GitHub Actions run, scroll to **Artifacts**, and
-download `dryft-report.zip`.
-
-The SARIF file is uploaded two ways:
-
-- `dryft-sarif` artifact: always available on the workflow run.
-- Code Scanning upload: visible under GitHub **Security > Code scanning** only
-  when the repository has code scanning support enabled. If GitHub returns
-  "Advanced Security must be enabled," the artifact still exists and the Dryft
-  pass/fail result still works.
-
-## CI Behavior
-
-The default CI policy is balanced:
-
-- fails unknown or archived feature markers
-- fails changed source files with no Dryft marker
-- warns on deprecated feature markers
-- warns when implemented features have no verification marker
-- warns when changed files fall outside optional feature path globs
-
-Reports are available as terminal text, JSON, or SARIF.
-
-## Agent Prompt
-
-Use this one-shot prompt when asking an AI coding agent to implement a feature
-in a Dryft-enabled repo:
-
-```text
-You are implementing a feature in a repository that uses Dryft.
-
-Before editing code:
-1. Read dryft.yml.
-2. Identify the existing feature ID that matches this work.
-3. If no existing feature fits, update dryft.yml in the same change.
-
-While editing:
-- Add or preserve dryft:implements <feature-id> near the top of every changed
-  production source file.
-- Add or preserve dryft:verifies <feature-id> near the top of every changed test
-  file.
-- Add or preserve dryft:relates <feature-id> near the top of every changed
-  config, migration, workflow, prompt, or documentation file.
-- Do not invent feature IDs in code without also updating dryft.yml.
-
-Before finishing:
-1. Run npx @dijla-ventures-llc/dryft scan --format text.
-2. Fix unknown, inactive, missing, or path-drift markers.
-3. Summarize which feature IDs were touched.
-```
+Apache-2.0. Copyright 2026 Dijla Ventures LLC.

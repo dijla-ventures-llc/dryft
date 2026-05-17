@@ -1,26 +1,17 @@
-// dryft:verifies core.init
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
   createAgentInstructions,
-  createGithubWorkflow,
+  createMcpConfig,
   createStarterManifest
 } from "../src/init.js";
 
-test("init templates include starter manifest, agent instructions, and GitHub workflow", () => {
+test("init templates include starter manifest, agent instructions, and MCP config", () => {
   assert.match(createStarterManifest("Example"), /features:/);
   assert.match(createStarterManifest("Example"), /auth.magic-link.login/);
-  assert.match(createAgentInstructions(), /dryft:implements <feature-id>/);
-  assert.match(createGithubWorkflow(), /uses: dijla-ventures-llc\/dryft-action@v1/);
-  assert.match(createGithubWorkflow(), /base: origin\/\$\{\{ github.base_ref \}\}/);
-  assert.match(createGithubWorkflow(), /actions: read/);
-  assert.match(createGithubWorkflow(), /json-output: dryft-report\.json/);
-  assert.match(
-    createGithubWorkflow(),
-    /name: Upload Dryft SARIF to code scanning[\s\S]*continue-on-error: true/
-  );
-  assert.match(createGithubWorkflow(), /name: Upload Dryft SARIF artifact/);
-  assert.match(createGithubWorkflow(), /name: dryft-sarif/);
-  assert.match(createGithubWorkflow(), /uses: actions\/upload-artifact@v4/);
+  assert.match(createAgentInstructions(), /dryft_features_for_file/);
+  assert.match(createMcpConfig(), /"mcpServers"/);
+  assert.match(createMcpConfig(), /@dijla-ventures-llc\/dryft@latest/);
+  assert.match(createMcpConfig(), /"mcp"/);
 });
