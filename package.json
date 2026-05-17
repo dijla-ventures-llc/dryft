@@ -1,7 +1,7 @@
 {
   "name": "@dijla-ventures-llc/dryft",
-  "version": "0.1.4",
-  "description": "Static analysis for feature integrity in the age of AI.",
+  "version": "0.2.0",
+  "description": "A queryable feature index your AI agents read before editing your codebase.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/src/index.js",
