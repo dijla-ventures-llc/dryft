@@ -2,16 +2,12 @@
 import picomatch from "picomatch";
 
 import { listRepositoryFiles } from "./file-list.js";
-import { scanRepository } from "./scanner.js";
 import type {
   DryftManifest,
-  DryftMarker,
   FeatureDetail,
   FeatureIndex,
   FeatureIndexEntry,
-  FeatureMembership,
-  FeatureSummary,
-  FileMembership
+  FeatureSummary
 } from "./types.js";
 
 export async function buildFeatureIndex(
@@ -19,45 +15,18 @@ export async function buildFeatureIndex(
   manifest: DryftManifest
 ): Promise<FeatureIndex> {
   const files = await listRepositoryFiles(cwd);
-  const scan = await scanRepository({ cwd, manifest, files });
-  return computeFeatureIndex(manifest, files, scan.references);
+  return computeFeatureIndex(manifest, files);
 }
 
 export function computeFeatureIndex(
   manifest: DryftManifest,
-  files: string[],
-  markers: DryftMarker[]
+  files: string[]
 ): FeatureIndex {
   const features: Record<string, FeatureIndexEntry> = {};
-  const fileToFeatures = new Map<string, FeatureMembership[]>();
+  const fileToFeatures = new Map<string, string[]>();
 
   for (const feature of manifest.features) {
-    features[feature.id] = {
-      feature,
-      markerFiles: [],
-      pathFiles: [],
-      allFiles: [],
-      markers: []
-    };
-  }
-
-  const markerFilesByFeature = new Map<string, Set<string>>();
-  for (const marker of markers) {
-    const entry = features[marker.featureId];
-    if (!entry) {
-      continue;
-    }
-    entry.markers.push(marker);
-    let set = markerFilesByFeature.get(marker.featureId);
-    if (!set) {
-      set = new Set();
-      markerFilesByFeature.set(marker.featureId, set);
-    }
-    set.add(marker.file);
-    addMembership(fileToFeatures, marker.file, {
-      featureId: marker.featureId,
-      source: "marker"
-    });
+    features[feature.id] = { feature, files: [] };
   }
 
   for (const feature of manifest.features) {
@@ -68,24 +37,21 @@ export function computeFeatureIndex(
     const entry = features[feature.id];
     for (const file of files) {
       if (matcher(file)) {
-        entry.pathFiles.push(file);
-        if (!hasMembership(fileToFeatures, file, feature.id)) {
-          addMembership(fileToFeatures, file, {
-            featureId: feature.id,
-            source: "path"
-          });
+        entry.files.push(file);
+        const existing = fileToFeatures.get(file);
+        if (existing) {
+          if (!existing.includes(feature.id)) {
+            existing.push(feature.id);
+          }
+        } else {
+          fileToFeatures.set(file, [feature.id]);
         }
       }
     }
   }
 
-  for (const featureId of Object.keys(features)) {
-    const entry = features[featureId];
-    entry.markerFiles = sortUnique(
-      Array.from(markerFilesByFeature.get(featureId) ?? [])
-    );
-    entry.pathFiles = sortUnique(entry.pathFiles);
-    entry.allFiles = sortUnique([...entry.markerFiles, ...entry.pathFiles]);
+  for (const id of Object.keys(features)) {
+    features[id].files = sortUnique(features[id].files);
   }
 
   return { manifest, features, fileToFeatures };
@@ -98,8 +64,7 @@ export function listFeatures(index: FeatureIndex): FeatureSummary[] {
       title: entry.feature.title,
       status: entry.feature.status,
       owner: entry.feature.owner,
-      fileCount: entry.allFiles.length,
-      markerCount: entry.markers.length
+      fileCount: entry.files.length
     }))
     .sort((left, right) => left.id.localeCompare(right.id));
 }
@@ -112,48 +77,19 @@ export function getFeature(
   if (!entry) {
     return undefined;
   }
-
-  const markerFileSet = new Set(entry.markerFiles);
-  const files: FileMembership[] = [
-    ...entry.markerFiles.map((file): FileMembership => ({
-      file,
-      source: "marker"
-    })),
-    ...entry.pathFiles
-      .filter((file) => !markerFileSet.has(file))
-      .map((file): FileMembership => ({ file, source: "path" }))
-  ];
-
-  return {
-    feature: entry.feature,
-    files: files.sort((left, right) => left.file.localeCompare(right.file)),
-    markers: {
-      implements: entry.markers.filter((marker) => marker.role === "implements"),
-      verifies: entry.markers.filter((marker) => marker.role === "verifies"),
-      relates: entry.markers.filter((marker) => marker.role === "relates")
-    }
-  };
+  return { feature: entry.feature, files: entry.files };
 }
 
 export function featuresForFile(
   index: FeatureIndex,
   filePath: string
-): FeatureMembership[] {
+): string[] {
   const memberships = index.fileToFeatures.get(filePath) ?? [];
-  return [...memberships].sort((left, right) => {
-    if (left.source !== right.source) {
-      return left.source === "marker" ? -1 : 1;
-    }
-    return left.featureId.localeCompare(right.featureId);
-  });
+  return [...memberships].sort((left, right) => left.localeCompare(right));
 }
 
-export function filesForFeature(
-  index: FeatureIndex,
-  id: string
-): FileMembership[] {
-  const detail = getFeature(index, id);
-  return detail?.files ?? [];
+export function filesForFeature(index: FeatureIndex, id: string): string[] {
+  return index.features[id]?.files ?? [];
 }
 
 export function searchFeatures(
@@ -170,36 +106,6 @@ export function searchFeatures(
     if (summary.owner?.toLowerCase().includes(normalized)) return true;
     return false;
   });
-}
-
-function addMembership(
-  map: Map<string, FeatureMembership[]>,
-  file: string,
-  membership: FeatureMembership
-): void {
-  const list = map.get(file);
-  if (!list) {
-    map.set(file, [membership]);
-    return;
-  }
-  const duplicate = list.some(
-    (existing) =>
-      existing.featureId === membership.featureId &&
-      existing.source === membership.source
-  );
-  if (!duplicate) {
-    list.push(membership);
-  }
-}
-
-function hasMembership(
-  map: Map<string, FeatureMembership[]>,
-  file: string,
-  featureId: string
-): boolean {
-  const list = map.get(file);
-  if (!list) return false;
-  return list.some((existing) => existing.featureId === featureId);
 }
 
 function sortUnique(values: string[]): string[] {

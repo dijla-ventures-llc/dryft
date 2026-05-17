@@ -116,8 +116,13 @@ function parseOptions(rawArgs: string[]): Record<string, string | undefined> {
     if (inlineValue !== undefined) {
       options[key] = inlineValue;
     } else {
-      options[key] = rawArgs[index + 1];
-      index += 1;
+      const next = rawArgs[index + 1];
+      if (next !== undefined && !next.startsWith("--")) {
+        options[key] = next;
+        index += 1;
+      } else {
+        options[key] = "";
+      }
     }
   }
 

@@ -1,119 +1,46 @@
 // dryft:implements core.scanner
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import picomatch from "picomatch";
 
 import { listRepositoryFiles, normalizeInputFiles } from "./file-list.js";
-import { isValidFeatureId } from "./manifest.js";
-import { parseMarkers } from "./markers.js";
 import type {
-  DryftIssue,
-  DryftMarker,
   DryftReport,
-  FeatureReferences,
+  FeatureSummary,
   ScanOptions
 } from "./types.js";
 
 export async function scanRepository(options: ScanOptions): Promise<DryftReport> {
-  const featureMap = createFeatureMap(options.manifest.features);
-  const knownFeatureIds = new Set(Object.keys(featureMap));
   const files = options.files
     ? normalizeInputFiles(options.cwd, options.files)
     : await listRepositoryFiles(options.cwd);
-  const references: DryftMarker[] = [];
-  const issues: DryftIssue[] = [];
 
-  for (const file of files) {
-    const absolutePath = path.join(options.cwd, file);
-    let content: string;
+  const featureSummaries: Record<string, FeatureSummary> = {};
 
-    try {
-      content = await readFile(absolutePath, "utf8");
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        continue;
-      }
-      throw error;
-    }
-
-    const markers = parseMarkers(content, file);
-    references.push(...markers);
-
-    for (const marker of markers) {
-      if (!isValidFeatureId(marker.featureId)) {
-        issues.push({
-          code: "unknown-feature",
-          severity: "error",
-          message: `Marker references invalid feature id "${marker.featureId}".`,
-          file: marker.file,
-          line: marker.line,
-          featureId: marker.featureId
-        });
-        continue;
-      }
-
-      if (!knownFeatureIds.has(marker.featureId)) {
-        issues.push({
-          code: "unknown-feature",
-          severity: "error",
-          message: `Marker references unknown feature "${marker.featureId}".`,
-          file: marker.file,
-          line: marker.line,
-          featureId: marker.featureId
-        });
-        continue;
-      }
-
-      const featureReferences = featureMap[marker.featureId];
-      featureReferences[marker.role].push(marker);
-
-      if (featureReferences.feature.status === "deprecated") {
-        issues.push({
-          code: "deprecated-feature",
-          severity: "warning",
-          message: `Marker references deprecated feature "${marker.featureId}".`,
-          file: marker.file,
-          line: marker.line,
-          featureId: marker.featureId
-        });
-      }
-
-      if (featureReferences.feature.status === "archived") {
-        issues.push({
-          code: "inactive-feature",
-          severity: "error",
-          message: `Marker references archived feature "${marker.featureId}".`,
-          file: marker.file,
-          line: marker.line,
-          featureId: marker.featureId
-        });
+  for (const feature of options.manifest.features) {
+    let fileCount = 0;
+    if (feature.paths && feature.paths.length > 0) {
+      const matcher = picomatch(feature.paths);
+      for (const file of files) {
+        if (matcher(file)) {
+          fileCount += 1;
+        }
       }
     }
+    featureSummaries[feature.id] = {
+      id: feature.id,
+      title: feature.title,
+      status: feature.status,
+      owner: feature.owner,
+      fileCount
+    };
   }
 
   return {
     project: options.manifest.project,
     mode: "scan",
-    passed: issues.every((issue) => issue.severity !== "error"),
+    passed: true,
     scannedFiles: files.length,
     changedFiles: [],
-    references,
-    features: featureMap,
-    issues
+    features: featureSummaries,
+    issues: []
   };
-}
-
-function createFeatureMap(
-  features: ScanOptions["manifest"]["features"]
-): Record<string, FeatureReferences> {
-  return Object.fromEntries(
-    features.map((feature) => [
-      feature.id,
-      {
-        feature,
-        implements: [],
-        verifies: [],
-        relates: []
-      }
-    ])
-  );
 }

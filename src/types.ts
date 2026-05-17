@@ -1,8 +1,6 @@
 // dryft:relates core.manifest
 export type FeatureStatus = "active" | "deprecated" | "archived";
 
-export type MarkerRole = "implements" | "verifies" | "relates";
-
 export type ReportMode = "scan" | "ci";
 
 export type IssueSeverity = "error" | "warning";
@@ -25,36 +23,39 @@ export interface DryftManifest {
   path: string;
 }
 
-export interface DryftMarker {
-  role: MarkerRole;
-  featureId: string;
-  file: string;
-  line: number;
-  column: number;
-  raw: string;
-}
-
 export interface DryftIssue {
   code:
     | "invalid-manifest"
-    | "unknown-feature"
-    | "deprecated-feature"
-    | "inactive-feature"
-    | "missing-marker"
-    | "missing-verification"
-    | "path-affinity-mismatch";
+    | "deprecated-feature-touched"
+    | "archived-feature-touched";
   severity: IssueSeverity;
   message: string;
   file?: string;
-  line?: number;
   featureId?: string;
 }
 
-export interface FeatureReferences {
+export interface FeatureSummary {
+  id: string;
+  title: string;
+  status: FeatureStatus;
+  owner?: string;
+  fileCount: number;
+}
+
+export interface FeatureDetail {
   feature: DryftFeature;
-  implements: DryftMarker[];
-  verifies: DryftMarker[];
-  relates: DryftMarker[];
+  files: string[];
+}
+
+export interface FeatureIndexEntry {
+  feature: DryftFeature;
+  files: string[];
+}
+
+export interface FeatureIndex {
+  manifest: DryftManifest;
+  features: Record<string, FeatureIndexEntry>;
+  fileToFeatures: Map<string, string[]>;
 }
 
 export interface DryftReport {
@@ -64,8 +65,7 @@ export interface DryftReport {
   baseRef?: string;
   scannedFiles: number;
   changedFiles: string[];
-  references: DryftMarker[];
-  features: Record<string, FeatureReferences>;
+  features: Record<string, FeatureSummary>;
   issues: DryftIssue[];
 }
 
@@ -80,49 +80,4 @@ export interface CiOptions {
   manifest: DryftManifest;
   baseRef?: string;
   changedFiles?: string[];
-}
-
-export type MembershipSource = "marker" | "path";
-
-export interface FeatureMembership {
-  featureId: string;
-  source: MembershipSource;
-}
-
-export interface FileMembership {
-  file: string;
-  source: MembershipSource;
-}
-
-export interface FeatureSummary {
-  id: string;
-  title: string;
-  status: FeatureStatus;
-  owner?: string;
-  fileCount: number;
-  markerCount: number;
-}
-
-export interface FeatureDetail {
-  feature: DryftFeature;
-  files: FileMembership[];
-  markers: {
-    implements: DryftMarker[];
-    verifies: DryftMarker[];
-    relates: DryftMarker[];
-  };
-}
-
-export interface FeatureIndexEntry {
-  feature: DryftFeature;
-  markerFiles: string[];
-  pathFiles: string[];
-  allFiles: string[];
-  markers: DryftMarker[];
-}
-
-export interface FeatureIndex {
-  manifest: DryftManifest;
-  features: Record<string, FeatureIndexEntry>;
-  fileToFeatures: Map<string, FeatureMembership[]>;
 }

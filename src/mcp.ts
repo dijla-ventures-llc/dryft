@@ -162,12 +162,12 @@ export function createMcpServer(options: RunMcpOptions): Server {
       const files = filesForFeature(index, id);
       if (files.length === 0) {
         return textResult(
-          `# Files for \`${id}\`\n\n_No files tracked for this feature._\n`
+          `# Files for \`${id}\`\n\n_No files match this feature's path globs._\n`
         );
       }
       const lines = [`# Files for \`${id}\``, ""];
       for (const file of files) {
-        lines.push(`- \`${file.file}\` — ${file.source}`);
+        lines.push(`- \`${file}\``);
       }
       return textResult(`${lines.join("\n")}\n`);
     }

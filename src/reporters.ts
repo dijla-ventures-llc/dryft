@@ -3,7 +3,6 @@ import type {
   DryftIssue,
   DryftReport,
   FeatureDetail,
-  FeatureMembership,
   FeatureSummary
 } from "./types.js";
 
@@ -22,7 +21,7 @@ export function toTextReport(report: DryftReport): string {
     title,
     `Project: ${report.project.name ?? "unnamed"}`,
     `Scanned files: ${report.scannedFiles}`,
-    `References: ${report.references.length}`,
+    `Features: ${Object.keys(report.features).length}`,
     `Issues: ${countLabel(errors.length, "error")}, ${countLabel(
       warnings.length,
       "warning"
@@ -51,8 +50,7 @@ export function toSarifReport(report: DryftReport): string {
   return `${JSON.stringify(
     {
       version: "2.1.0",
-      $schema:
-        "https://json.schemastore.org/sarif-2.1.0.json",
+      $schema: "https://json.schemastore.org/sarif-2.1.0.json",
       runs: [
         {
           tool: {
@@ -70,10 +68,7 @@ export function toSarifReport(report: DryftReport): string {
               ? [
                   {
                     physicalLocation: {
-                      artifactLocation: { uri: issue.file },
-                      region: {
-                        startLine: issue.line ?? 1
-                      }
+                      artifactLocation: { uri: issue.file }
                     }
                   }
                 ]
@@ -96,12 +91,12 @@ export function toContextListReport(summaries: FeatureSummary[]): string {
     "",
     `${summaries.length} feature${summaries.length === 1 ? "" : "s"} tracked in this repo.`,
     "",
-    "| ID | Status | Title | Files | Markers | Owner |",
-    "|---|---|---|---|---|---|"
+    "| ID | Status | Title | Files | Owner |",
+    "|---|---|---|---|---|"
   ];
   for (const summary of summaries) {
     lines.push(
-      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.fileCount} | ${summary.markerCount} | ${summary.owner ?? "—"} |`
+      `| \`${summary.id}\` | ${summary.status} | ${summary.title} | ${summary.fileCount} | ${summary.owner ?? "—"} |`
     );
   }
   return `${lines.join("\n")}\n`;
@@ -122,29 +117,10 @@ export function toContextFeatureReport(detail: FeatureDetail): string {
 
   lines.push("", `## Files (${detail.files.length})`, "");
   if (detail.files.length === 0) {
-    lines.push("_No files tracked for this feature._");
+    lines.push("_No files match this feature's path globs._");
   } else {
     for (const file of detail.files) {
-      lines.push(`- \`${file.file}\` — ${file.source}`);
-    }
-  }
-
-  const markerTotal =
-    detail.markers.implements.length +
-    detail.markers.verifies.length +
-    detail.markers.relates.length;
-  lines.push("", `## Markers (${markerTotal})`, "");
-  if (markerTotal === 0) {
-    lines.push("_No markers reference this feature._");
-  } else {
-    for (const marker of detail.markers.implements) {
-      lines.push(`- **implements** \`${marker.file}:${marker.line}\``);
-    }
-    for (const marker of detail.markers.verifies) {
-      lines.push(`- **verifies** \`${marker.file}:${marker.line}\``);
-    }
-    for (const marker of detail.markers.relates) {
-      lines.push(`- **relates** \`${marker.file}:${marker.line}\``);
+      lines.push(`- \`${file}\``);
     }
   }
 
@@ -153,16 +129,16 @@ export function toContextFeatureReport(detail: FeatureDetail): string {
 
 export function toContextFileReport(
   filePath: string,
-  memberships: FeatureMembership[]
+  featureIds: string[]
 ): string {
   const lines = [`# \`${filePath}\``, ""];
-  if (memberships.length === 0) {
+  if (featureIds.length === 0) {
     lines.push("This file is not part of any tracked feature.");
     return `${lines.join("\n")}\n`;
   }
   lines.push("This file is part of:", "");
-  for (const membership of memberships) {
-    lines.push(`- \`${membership.featureId}\` (${membership.source})`);
+  for (const id of featureIds) {
+    lines.push(`- \`${id}\``);
   }
   return `${lines.join("\n")}\n`;
 }
@@ -195,9 +171,6 @@ function countLabel(count: number, noun: string): string {
 }
 
 function formatIssue(issue: DryftIssue): string {
-  const location = issue.file
-    ? `${issue.file}${issue.line ? `:${issue.line}` : ""}: `
-    : "";
-
+  const location = issue.file ? `${issue.file}: ` : "";
   return `[${issue.severity}] ${issue.code}: ${location}${issue.message}`;
 }

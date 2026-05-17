@@ -39,7 +39,7 @@ async function setupRepo(): Promise<string> {
   await mkdir(join(dir, "src", "billing"), { recursive: true });
   await writeFile(
     join(dir, "src", "auth", "login.ts"),
-    "// dryft:implements auth.magic-link.login\nexport const login = true;\n"
+    "export const login = true;\n"
   );
   await writeFile(
     join(dir, "src", "auth", "session.ts"),
@@ -101,7 +101,7 @@ test("dryft_list_features returns Markdown with feature ids", async () => {
   });
 });
 
-test("dryft_get_feature returns marker- and path-sourced files", async () => {
+test("dryft_get_feature returns files that match its path globs", async () => {
   const dir = await setupRepo();
   await withMcpClient(dir, async (client) => {
     const result = await client.callTool({
@@ -111,12 +111,10 @@ test("dryft_get_feature returns marker- and path-sourced files", async () => {
     const content = result.content as Array<{ type: string; text: string }>;
     assert.match(content[0].text, /src\/auth\/login\.ts/);
     assert.match(content[0].text, /src\/auth\/session\.ts/);
-    assert.match(content[0].text, /marker/);
-    assert.match(content[0].text, /path/);
   });
 });
 
-test("dryft_features_for_file resolves marker source", async () => {
+test("dryft_features_for_file returns the feature membership for a path", async () => {
   const dir = await setupRepo();
   await withMcpClient(dir, async (client) => {
     const result = await client.callTool({
@@ -125,7 +123,6 @@ test("dryft_features_for_file resolves marker source", async () => {
     });
     const content = result.content as Array<{ type: string; text: string }>;
     assert.match(content[0].text, /auth\.magic-link\.login/);
-    assert.match(content[0].text, /marker/);
   });
 });
 

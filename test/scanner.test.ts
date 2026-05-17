@@ -8,75 +8,56 @@ import test from "node:test";
 import { loadManifest } from "../src/manifest.js";
 import { scanRepository } from "../src/scanner.js";
 
-const marker = (role: string, featureId: string): string =>
-  `dryft:${role} ${featureId}`;
-
-test("scanRepository builds a feature reference graph and reports unknown markers", async () => {
+test("scanRepository groups files by feature path globs", async () => {
   const dir = await mkdtemp(join(tmpdir(), "dryft-scan-"));
-  await mkdir(join(dir, "src"), { recursive: true });
+  await mkdir(join(dir, "src", "auth"), { recursive: true });
+  await mkdir(join(dir, "test", "auth"), { recursive: true });
   await writeFile(
     join(dir, "dryft.yml"),
     [
       "project:",
       "  name: Example",
       "features:",
-      "  - id: auth.magic-link.login",
-      "    title: Magic link login",
-      "    status: active"
+      "  - id: auth.login",
+      "    title: Login",
+      "    status: active",
+      "    paths:",
+      "      - src/auth/**",
+      "      - test/auth/**"
     ].join("\n")
   );
+  await writeFile(join(dir, "src", "auth", "login.ts"), "export const login = true;\n");
   await writeFile(
-    join(dir, "src", "auth.ts"),
-    [
-      `// ${marker("implements", "auth.magic-link.login")}`,
-      "export const auth = true;",
-      `// ${marker("verifies", "missing.feature")}`
-    ].join("\n")
+    join(dir, "test", "auth", "login.test.ts"),
+    "export const testLogin = true;\n"
   );
 
   const manifest = await loadManifest(dir);
   const report = await scanRepository({ cwd: dir, manifest });
 
-  assert.equal(report.references.length, 2);
-  assert.equal(report.features["auth.magic-link.login"].implements.length, 1);
-  assert.equal(report.issues[0].code, "unknown-feature");
-  assert.equal(report.issues[0].severity, "error");
+  assert.equal(report.passed, true);
+  assert.equal(report.features["auth.login"].fileCount, 2);
+  assert.deepEqual(report.issues, []);
 });
 
-test("scanRepository warns on deprecated features and fails archived features", async () => {
+test("scanRepository reports zero fileCount for features without matching paths", async () => {
   const dir = await mkdtemp(join(tmpdir(), "dryft-scan-"));
-  await mkdir(join(dir, "src"), { recursive: true });
   await writeFile(
     join(dir, "dryft.yml"),
     [
       "project:",
       "  name: Example",
       "features:",
-      "  - id: auth.legacy-login",
-      "    title: Legacy login",
-      "    status: deprecated",
-      "  - id: auth.deleted-login",
-      "    title: Deleted login",
-      "    status: archived"
-    ].join("\n")
-  );
-  await writeFile(
-    join(dir, "src", "auth.ts"),
-    [
-      `// ${marker("implements", "auth.legacy-login")}`,
-      `// ${marker("implements", "auth.deleted-login")}`
+      "  - id: orphan.feature",
+      "    title: Orphan",
+      "    status: active",
+      "    paths:",
+      "      - never/matches/**"
     ].join("\n")
   );
 
   const manifest = await loadManifest(dir);
   const report = await scanRepository({ cwd: dir, manifest });
 
-  assert.equal(report.passed, false);
-  assert.deepEqual(
-    report.issues.map((issue) => [issue.code, issue.severity]),
-    [
-      ["deprecated-feature", "warning"],
-      ["inactive-feature", "error"]
-    ]
-  );
+  assert.equal(report.features["orphan.feature"].fileCount, 0);
 });

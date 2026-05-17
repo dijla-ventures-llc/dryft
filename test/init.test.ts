@@ -11,7 +11,7 @@ import {
 test("init templates include starter manifest, agent instructions, and GitHub workflow", () => {
   assert.match(createStarterManifest("Example"), /features:/);
   assert.match(createStarterManifest("Example"), /auth.magic-link.login/);
-  assert.match(createAgentInstructions(), /dryft:implements <feature-id>/);
+  assert.match(createAgentInstructions(), /dryft_features_for_file/);
   assert.match(createGithubWorkflow(), /uses: dijla-ventures-llc\/dryft-action@v1/);
   assert.match(createGithubWorkflow(), /base: origin\/\$\{\{ github.base_ref \}\}/);
   assert.match(createGithubWorkflow(), /actions: read/);

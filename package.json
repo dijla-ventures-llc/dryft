@@ -37,6 +37,7 @@
     "test": "npm run build && node scripts/run-tests.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.96.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "picomatch": "^4.0.4",
     "yaml": "^2.9.0"
