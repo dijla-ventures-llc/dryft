@@ -115,6 +115,17 @@ test("featuresForFile returns feature ids a file belongs to", () => {
   ]);
 });
 
+test("featuresForFile resolves paths even when the file was not indexed", () => {
+  const index = computeFeatureIndex(manifest, files);
+
+  assert.deepEqual(featuresForFile(index, "src/auth/new-flow.ts"), [
+    "auth.login"
+  ]);
+  assert.deepEqual(featuresForFile(index, "src\\auth\\windows-path.ts"), [
+    "auth.login"
+  ]);
+});
+
 test("featuresForFile returns empty list when file is unowned", () => {
   const index = computeFeatureIndex(manifest, files);
   assert.deepEqual(featuresForFile(index, "src/ops/runbook.ts"), []);

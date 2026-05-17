@@ -1,6 +1,6 @@
 {
   "name": "@dijla-ventures-llc/dryft",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A queryable feature index your AI agents read before editing your codebase.",
   "license": "Apache-2.0",
   "type": "module",

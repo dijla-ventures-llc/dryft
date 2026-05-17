@@ -1,6 +1,7 @@
 ﻿import picomatch from "picomatch";
 
 import { listRepositoryFiles } from "./file-list.js";
+import { toPosixPath } from "./path-utils.js";
 import type {
   DryftManifest,
   FeatureDetail,
@@ -83,7 +84,19 @@ export function featuresForFile(
   index: FeatureIndex,
   filePath: string
 ): string[] {
-  const memberships = index.fileToFeatures.get(filePath) ?? [];
+  const normalizedPath = toPosixPath(filePath);
+  const memberships = new Set(index.fileToFeatures.get(normalizedPath) ?? []);
+
+  for (const entry of Object.values(index.features)) {
+    if (!entry.feature.paths || entry.feature.paths.length === 0) {
+      continue;
+    }
+
+    if (picomatch(entry.feature.paths)(normalizedPath)) {
+      memberships.add(entry.feature.id);
+    }
+  }
+
   return [...memberships].sort((left, right) => left.localeCompare(right));
 }
 

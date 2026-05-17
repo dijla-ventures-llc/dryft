@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Fixed
+
+- `dryft_features_for_file` now resolves feature ownership directly from manifest path globs, even when the file is new, large, or otherwise absent from the scanned file index.
+
 ## 0.2.0
 
 **Reposition: Dryft is now a queryable feature index and MCP context provider for AI agents.**
