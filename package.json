@@ -13,7 +13,7 @@
     }
   },
   "bin": {
-    "dryft": "./dist/src/cli.js"
+    "dryft": "dist/src/cli.js"
   },
   "repository": {
     "type": "git",
