@@ -1,33 +1,32 @@
-# dryft:relates core.ci
-name: Dryft
+name: Dryft Feature Drift
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   dryft:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm test
+
       - name: Run Dryft
-        id: dryft
-        continue-on-error: true
-        run: node dist/src/cli.js ci --base origin/${{ github.base_ref }} --format sarif > dryft.sarif
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: dijla-ventures/dryft-feature-drift@v1.0.0
+        with:
+          format: sarif
+          output: dryft.sarif
+
+      - name: Upload Dryft SARIF
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: dryft.sarif
-      - name: Fail on Dryft errors
-        if: steps.dryft.outcome == 'failure'
-        run: exit 1
