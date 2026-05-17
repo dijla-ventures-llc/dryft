@@ -9,8 +9,9 @@ export {
   listFeatures,
   searchFeatures
 } from "./context.js";
+export { runInfer } from "./infer.js";
 export { createAgentInstructions, createGithubWorkflow, createStarterManifest } from "./init.js";
-export { isValidFeatureId, loadManifest } from "./manifest.js";
+export { isValidFeatureId, loadManifest, parseManifestContent } from "./manifest.js";
 export { createMcpServer, runMcp } from "./mcp.js";
 export {
   toContextFeatureReport,

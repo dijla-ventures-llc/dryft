@@ -65,3 +65,10 @@ features:
     paths:
       - src/mcp.ts
       - test/mcp.test.ts
+  - id: core.infer
+    title: LLM-based manifest inference
+    status: active
+    owner: core
+    paths:
+      - src/infer.ts
+      - test/infer.test.ts

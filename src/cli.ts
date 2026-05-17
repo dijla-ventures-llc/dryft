@@ -11,6 +11,7 @@ import {
   listFeatures,
   searchFeatures
 } from "./context.js";
+import { runInfer } from "./infer.js";
 import {
   createAgentInstructions,
   createGithubWorkflow,
@@ -58,6 +59,34 @@ try {
 async function runInit(rawArgs: string[]): Promise<void> {
   const options = parseOptions(rawArgs);
   const cwd = process.cwd();
+  const isInfer = "infer" in options;
+  const isDryRun = "dry-run" in options;
+
+  if (isInfer) {
+    const result = await runInfer({
+      cwd,
+      model: options.model || undefined,
+      dryRun: isDryRun
+    });
+    if (isDryRun) {
+      process.stdout.write(result.yaml);
+      if (!result.yaml.endsWith("\n")) {
+        process.stdout.write("\n");
+      }
+      console.error("(--dry-run: dryft.yml was not written)");
+      return;
+    }
+    console.log(`Wrote ${result.path}. Review before committing.`);
+    await writeIfAbsent(path.join(cwd, "AGENTS.md"), createAgentInstructions());
+    await mkdir(path.join(cwd, ".github", "workflows"), { recursive: true });
+    await writeIfAbsent(
+      path.join(cwd, ".github", "workflows", "dryft.yml"),
+      createGithubWorkflow()
+    );
+    console.log("Dryft initialized.");
+    return;
+  }
+
   const projectName = options.project ?? path.basename(cwd);
 
   await writeIfAbsent(path.join(cwd, "dryft.yml"), createStarterManifest(projectName));
@@ -272,6 +301,7 @@ function printHelp(): void {
     "",
     "Usage:",
     "  dryft init [--project <name>]",
+    "  dryft init --infer [--model <id>] [--dry-run]",
     "  dryft scan [--format text|json|sarif] [--config <path>]",
     "  dryft ci --base <ref> [--format text|json|sarif] [--config <path>]",
     "  dryft context list [--format text|json] [--config <path>]",
