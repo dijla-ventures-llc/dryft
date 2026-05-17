@@ -62,6 +62,22 @@ GitHub Actions workflow template. `dryft scan` builds the feature-reference
 graph for the repository. `dryft ci` evaluates changed files against a base ref
 and is intended for pull request checks.
 
+## GitHub Actions
+
+After `dryft init`, pull requests can run Dryft through the first-party action
+published from a dedicated Marketplace-compatible action repository:
+
+```yaml
+- uses: dijla-ventures/dryft-action@v1
+  with:
+    base: origin/${{ github.base_ref }}
+```
+
+The action wraps `dryft ci`. It can emit text, JSON, or SARIF output for GitHub
+code scanning annotations. The action itself should live in a separate public
+repository that contains a single root `action.yml` and no workflow files, so it
+can be published to GitHub Marketplace.
+
 ## CI behavior
 
 The default CI policy is balanced:

@@ -12,5 +12,6 @@ test("init templates include starter manifest, agent instructions, and GitHub wo
   assert.match(createStarterManifest("Example"), /features:/);
   assert.match(createStarterManifest("Example"), /auth.magic-link.login/);
   assert.match(createAgentInstructions(), /dryft:implements <feature-id>/);
-  assert.match(createGithubWorkflow(), /dryft ci --base/);
+  assert.match(createGithubWorkflow(), /uses: dijla-ventures\/dryft-action@v1/);
+  assert.match(createGithubWorkflow(), /base: origin\/\$\{\{ github.base_ref \}\}/);
 });
