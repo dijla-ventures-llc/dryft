@@ -154,7 +154,25 @@ Add the marketplace:
 codex plugin marketplace add dijla-ventures-llc/dryft --ref main
 ```
 
-Then install Dryft from the Codex plugin directory. The plugin bundles the MCP configuration and a skill that tells Codex when to query the feature map.
+Restart Codex, open the plugin directory, choose the `Dryft` marketplace, and install the `Dryft` plugin. The plugin bundles:
+
+- MCP config that starts `npx -y @dijla-ventures-llc/dryft@latest mcp`
+- A Codex skill that tells the agent to query the feature map before editing files
+
+If you added the marketplace before a Dryft plugin update, refresh it:
+
+```sh
+codex plugin marketplace upgrade dryft-plugins
+```
+
+If it still does not appear, remove and re-add it, then restart Codex:
+
+```sh
+codex plugin marketplace remove dryft-plugins
+codex plugin marketplace add dijla-ventures-llc/dryft --ref main
+```
+
+In a repository that uses Dryft, make sure `dryft.yml` exists. `dryft init` can generate the starter manifest and local `.mcp.json`; the Codex plugin supplies the agent behavior and MCP server definition.
 
 ## Human CLI Usage
 

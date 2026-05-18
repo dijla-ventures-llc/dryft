@@ -7,8 +7,9 @@
     {
       "name": "dryft",
       "source": {
-        "source": "local",
-        "path": "./"
+        "source": "url",
+        "url": "https://github.com/dijla-ventures-llc/dryft.git",
+        "ref": "main"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+### Fixed
+
+- Updated Codex plugin marketplace metadata so the Dryft marketplace points at the repo-root plugin through the Git-backed plugin source.
+- Documented Codex marketplace refresh and reinstall steps for users who added the marketplace before the plugin metadata update.
+
 ## 0.2.1
 
 ### Fixed

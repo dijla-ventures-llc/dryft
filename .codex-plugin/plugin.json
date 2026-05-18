@@ -1,6 +1,6 @@
 {
   "name": "dryft",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "A queryable feature index for AI coding agents.",
   "author": {
     "name": "Dijla Ventures LLC",
