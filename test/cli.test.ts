@@ -26,7 +26,7 @@ test("dryft init writes starter manifest, agent instructions, and MCP config", a
   assert.match(await readFile(join(dir, "dryft.yml"), "utf8"), /name: Example/);
   assert.match(
     await readFile(join(dir, "AGENTS.md"), "utf8"),
-    /dryft_features_for_file/
+    /dryft_plan_change/
   );
   assert.match(
     await readFile(join(dir, ".mcp.json"), "utf8"),

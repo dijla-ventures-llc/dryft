@@ -1,7 +1,7 @@
 {
   "name": "dryft",
-  "version": "0.2.2",
-  "description": "A queryable feature index for AI coding agents.",
+  "version": "0.3.0",
+  "description": "A feature map and MCP pre-edit controller for AI coding agents.",
   "author": {
     "name": "Dijla Ventures LLC",
     "url": "https://github.com/dijla-ventures-llc"
@@ -14,14 +14,14 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Dryft",
-    "shortDescription": "Feature index for AI agents",
-    "longDescription": "Dryft gives AI coding agents a structured, queryable view of your codebase's features. Agents call MCP tools to find which feature a file belongs to, list all features, or look up details from dryft.yml instead of inventing a new naming convention every session.",
-    "developerName": "Dijla Ventures",
+    "shortDescription": "Pre-edit feature map for AI agents",
+    "longDescription": "Dryft gives AI coding agents a structured, queryable view of your codebase's features. Agents call MCP tools to plan changes against dryft.yml before editing instead of inventing a new naming convention every session.",
+    "developerName": "Dijla Ventures LLC",
     "category": "Productivity",
     "capabilities": ["Read"],
     "websiteURL": "https://github.com/dijla-ventures-llc/dryft",
     "defaultPrompt": [
-      "Before editing files, ask Dryft which feature each file belongs to.",
+      "Before editing files, ask Dryft to plan the change against the feature map.",
       "List the features in this codebase using Dryft."
     ]
   }

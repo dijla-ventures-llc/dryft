@@ -1,7 +1,7 @@
 {
   "name": "@dijla-ventures-llc/dryft",
-  "version": "0.2.2",
-  "description": "A queryable feature index your AI agents read before editing your codebase.",
+  "version": "0.3.0",
+  "description": "A feature map and MCP pre-edit controller for AI coding agents.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/src/index.js",

@@ -11,6 +11,7 @@ import {
   filesForFeature,
   getFeature,
   listFeatures,
+  planChange,
   searchFeatures
 } from "./context.js";
 import { loadManifest } from "./manifest.js";
@@ -20,6 +21,7 @@ import {
   toContextListReport,
   toContextSearchReport
 } from "./reporters.js";
+import type { ChangePlan } from "./context.js";
 import type { FeatureIndex } from "./types.js";
 
 export interface RunMcpOptions {
@@ -45,7 +47,7 @@ export function createMcpServer(options: RunMcpOptions): Server {
   }
 
   const server = new Server(
-    { name: "dryft", version: "0.2.2" },
+    { name: "dryft", version: "0.3.0" },
     { capabilities: { tools: {} } }
   );
 
@@ -118,6 +120,29 @@ export function createMcpServer(options: RunMcpOptions): Server {
           },
           required: ["query"]
         }
+      },
+      {
+        name: "dryft_plan_change",
+        description:
+          "Plan a code change before editing by checking intended files against the Dryft feature map. Use this first when you know the goal and likely files.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            intent: {
+              type: "string",
+              description:
+                "Short description of the intended change, e.g. \"Add password reset email flow\"."
+            },
+            files: {
+              type: "array",
+              minItems: 1,
+              items: { type: "string" },
+              description:
+                "Repo-relative paths the agent expects to edit or create."
+            }
+          },
+          required: ["intent", "files"]
+        }
       }
     ]
   }));
@@ -180,6 +205,22 @@ export function createMcpServer(options: RunMcpOptions): Server {
       return textResult(toContextSearchReport(query, results));
     }
 
+    if (name === "dryft_plan_change") {
+      const intent = typeof params.intent === "string" ? params.intent : "";
+      const files = Array.isArray(params.files)
+        ? params.files.filter((file): file is string => typeof file === "string")
+        : [];
+      if (!intent.trim()) {
+        return errorResult("Missing required parameter: intent");
+      }
+      if (files.length === 0) {
+        return errorResult("Missing required parameter: files");
+      }
+
+      const plan = planChange(index, { intent, files });
+      return structuredTextResult(toChangePlanReport(plan), plan);
+    }
+
     return errorResult(`Unknown tool: ${name}`);
   });
 
@@ -192,9 +233,74 @@ function textResult(text: string) {
   };
 }
 
+function structuredTextResult(text: string, structuredContent: ChangePlan) {
+  return {
+    content: [{ type: "text" as const, text }],
+    structuredContent
+  };
+}
+
 function errorResult(message: string) {
   return {
     isError: true,
     content: [{ type: "text" as const, text: message }]
   };
+}
+
+function toChangePlanReport(plan: ChangePlan): string {
+  const lines = [
+    `# Dryft change plan: ${formatDecision(plan.decision)}`,
+    "",
+    `**Intent:** ${plan.intent}`,
+    "",
+    "## Files"
+  ];
+
+  for (const file of plan.files) {
+    const owner =
+      file.ownership === "owned"
+        ? file.featureIds.map((id) => `\`${id}\``).join(", ")
+        : "_No matching feature_";
+    lines.push(`- \`${file.path}\`: ${owner}`);
+    if (file.suggestedPathGlob) {
+      lines.push(`  - Suggested path glob: \`${file.suggestedPathGlob}\``);
+    }
+  }
+
+  if (plan.features.length > 0) {
+    lines.push("", "## Features");
+    for (const feature of plan.features) {
+      const owner = feature.owner ? `, owner: ${feature.owner}` : "";
+      lines.push(
+        `- \`${feature.id}\` (${feature.status}${owner}): ${feature.title}`
+      );
+    }
+  }
+
+  if (plan.risks.length > 0) {
+    lines.push("", "## Risks");
+    for (const risk of plan.risks) {
+      lines.push(`- **${risk.severity}:** ${risk.message}`);
+    }
+  }
+
+  lines.push("", "## Next Steps");
+  for (const step of plan.nextSteps) {
+    lines.push(`- ${step}`);
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+function formatDecision(decision: ChangePlan["decision"]): string {
+  if (decision === "ready") {
+    return "Ready to edit";
+  }
+  if (decision === "needs_review") {
+    return "Needs review";
+  }
+  if (decision === "needs_manifest_update") {
+    return "Needs manifest update";
+  }
+  return "Blocked by archived feature";
 }

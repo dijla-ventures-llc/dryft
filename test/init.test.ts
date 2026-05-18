@@ -10,7 +10,7 @@ import {
 test("init templates include starter manifest, agent instructions, and MCP config", () => {
   assert.match(createStarterManifest("Example"), /features:/);
   assert.match(createStarterManifest("Example"), /auth.magic-link.login/);
-  assert.match(createAgentInstructions(), /dryft_features_for_file/);
+  assert.match(createAgentInstructions(), /dryft_plan_change/);
   assert.match(createAgentInstructions(), /One-shot agent prompt/);
   assert.match(createAgentInstructions(), /feature IDs touched/);
   assert.match(createMcpConfig(), /"mcpServers"/);

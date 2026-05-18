@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `dryft_plan_change` MCP tool for agent pre-edit planning with intent, planned files, feature ownership, risks, next steps, and structured MCP output.
+
+### Changed
+
+- README now leads with Codex and Claude Code setup for AI coding agents.
+- Codex skill and generated agent instructions now direct agents to call `dryft_plan_change` before editing.
+- Codex plugin metadata now uses `Dijla Ventures LLC` consistently as the developer name.
+
 ## 0.2.2
 
 ### Fixed

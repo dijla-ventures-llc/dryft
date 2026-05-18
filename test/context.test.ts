@@ -7,6 +7,7 @@ import {
   filesForFeature,
   getFeature,
   listFeatures,
+  planChange,
   searchFeatures
 } from "../src/context.js";
 import type { DryftManifest } from "../src/types.js";
@@ -32,7 +33,14 @@ const manifest: DryftManifest = {
     {
       id: "ops.legacy",
       title: "Legacy ops tooling",
-      status: "deprecated"
+      status: "deprecated",
+      paths: ["src/ops/**"]
+    },
+    {
+      id: "admin.retired",
+      title: "Retired admin",
+      status: "archived",
+      paths: ["src/admin/retired/**"]
     }
   ]
 };
@@ -56,7 +64,7 @@ test("computeFeatureIndex groups files by path glob membership", () => {
   assert.deepEqual(index.features["billing.checkout"].files, [
     "src/billing/checkout.ts"
   ]);
-  assert.deepEqual(index.features["ops.legacy"].files, []);
+  assert.deepEqual(index.features["ops.legacy"].files, ["src/ops/runbook.ts"]);
 });
 
 test("computeFeatureIndex deduplicates files matching multiple globs", () => {
@@ -82,11 +90,12 @@ test("listFeatures returns sorted summaries with counts", () => {
 
   assert.deepEqual(
     summaries.map((summary) => summary.id),
-    ["auth.login", "billing.checkout", "ops.legacy"]
+    ["admin.retired", "auth.login", "billing.checkout", "ops.legacy"]
   );
-  assert.equal(summaries[0].fileCount, 3);
-  assert.equal(summaries[1].fileCount, 1);
-  assert.equal(summaries[2].fileCount, 0);
+  assert.equal(summaries[0].fileCount, 0);
+  assert.equal(summaries[1].fileCount, 3);
+  assert.equal(summaries[2].fileCount, 1);
+  assert.equal(summaries[3].fileCount, 1);
 });
 
 test("getFeature returns files for a known id", () => {
@@ -128,7 +137,6 @@ test("featuresForFile resolves paths even when the file was not indexed", () => 
 
 test("featuresForFile returns empty list when file is unowned", () => {
   const index = computeFeatureIndex(manifest, files);
-  assert.deepEqual(featuresForFile(index, "src/ops/runbook.ts"), []);
   assert.deepEqual(featuresForFile(index, "README.md"), []);
 });
 
@@ -139,7 +147,7 @@ test("filesForFeature returns the same list as the index entry", () => {
     "src/auth/session.ts",
     "test/auth/login.test.ts"
   ]);
-  assert.deepEqual(filesForFeature(index, "ops.legacy"), []);
+  assert.deepEqual(filesForFeature(index, "ops.legacy"), ["src/ops/runbook.ts"]);
 });
 
 test("searchFeatures matches id, title, and owner substrings", () => {
@@ -159,4 +167,66 @@ test("searchFeatures matches id, title, and owner substrings", () => {
   );
   assert.deepEqual(searchFeatures(index, ""), []);
   assert.deepEqual(searchFeatures(index, "nothing"), []);
+});
+
+test("planChange returns ready for active owned files", () => {
+  const index = computeFeatureIndex(manifest, files);
+
+  const plan = planChange(index, {
+    intent: "Update login session handling",
+    files: ["src/auth/login.ts", "src\\auth\\new-flow.ts"]
+  });
+
+  assert.equal(plan.decision, "ready");
+  assert.deepEqual(
+    plan.files.map((file) => file.path),
+    ["src/auth/login.ts", "src/auth/new-flow.ts"]
+  );
+  assert.deepEqual(
+    plan.features.map((feature) => feature.id),
+    ["auth.login"]
+  );
+  assert.deepEqual(plan.risks, []);
+  assert.ok(plan.nextSteps.some((step) => step.includes("auth.login")));
+});
+
+test("planChange asks for manifest updates for unowned files", () => {
+  const index = computeFeatureIndex(manifest, files);
+
+  const plan = planChange(index, {
+    intent: "Add public docs",
+    files: ["docs/getting-started.md"]
+  });
+
+  assert.equal(plan.decision, "needs_manifest_update");
+  assert.equal(plan.files[0].ownership, "unowned");
+  assert.equal(plan.files[0].suggestedPathGlob, "docs/**");
+  assert.equal(plan.risks[0].code, "unowned_file");
+});
+
+test("planChange escalates deprecated, archived, and cross-feature changes", () => {
+  const index = computeFeatureIndex(manifest, files);
+
+  const deprecatedPlan = planChange(index, {
+    intent: "Update legacy runbook",
+    files: ["src/ops/runbook.ts"]
+  });
+  assert.equal(deprecatedPlan.decision, "needs_review");
+  assert.equal(deprecatedPlan.risks[0].code, "deprecated_feature");
+
+  const archivedPlan = planChange(index, {
+    intent: "Patch retired admin flow",
+    files: ["src/admin/retired/user.ts"]
+  });
+  assert.equal(archivedPlan.decision, "blocked_archived");
+  assert.equal(archivedPlan.risks[0].code, "archived_feature");
+
+  const crossFeaturePlan = planChange(index, {
+    intent: "Coordinate auth and billing",
+    files: ["src/auth/login.ts", "src/billing/checkout.ts"]
+  });
+  assert.equal(crossFeaturePlan.decision, "needs_review");
+  assert.ok(
+    crossFeaturePlan.risks.some((risk) => risk.code === "cross_feature_change")
+  );
 });
