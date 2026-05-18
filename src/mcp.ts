@@ -45,7 +45,7 @@ export function createMcpServer(options: RunMcpOptions): Server {
   }
 
   const server = new Server(
-    { name: "dryft", version: "0.2.0" },
+    { name: "dryft", version: "0.2.2" },
     { capabilities: { tools: {} } }
   );
 
