@@ -1,17 +1,26 @@
 # Dryft
 
-**A feature map and MCP pre-edit controller for AI coding agents.**
+**Feature contracts for AI coding agents.**
 
 [![npm](https://img.shields.io/npm/v/%40dijla-ventures-llc%2Fdryft)](https://www.npmjs.com/package/@dijla-ventures-llc/dryft)
 
-Dryft gives coding agents a structured map of the features in a repository before they edit files. A checked-in `dryft.yml` defines the product and platform areas in your codebase. The Dryft MCP server lets agents plan changes against that feature map instead of guessing which product area they are touching.
+Published by Dijla Ventures LLC.
 
-The product flow is:
+Dryft makes AI coding agents declare the feature scope they intend to touch, then verifies whether their actual git diff stayed inside that scope before they finish.
+
+A checked-in `dryft.yml` defines the product and platform areas in your codebase. The Dryft MCP server turns that feature map into an agent workflow: plan the change, create a change contract, edit the repo, verify the diff, and produce a Dryft Receipt that reviewers can inspect.
+
+Dryft is not trying to be a generic static analyzer or semantic code reviewer. Its job is narrower and more practical: **AI scope accountability**.
+
+The agent flow is:
 
 1. A human or agent creates and reviews `dryft.yml`.
 2. The repo exposes Dryft as an MCP server through Codex, Claude Code, or another MCP client.
 3. Coding agents call `dryft_plan_change` before editing.
-4. Optional drift checks warn when changes touch deprecated or archived feature areas.
+4. Coding agents edit the repo.
+5. Coding agents call `dryft_verify_change` before final response to compare the actual git diff against the planned boundary.
+
+That receipt is the core product artifact. It answers the review question that AI-generated changes often create: "Did the agent touch only the feature it claimed to be working on, and if not, why?"
 
 ## Use Dryft With AI Coding Agents
 
@@ -52,7 +61,7 @@ codex plugin marketplace add dijla-ventures-llc/dryft --ref main
 Restart Codex, open the plugin directory, choose the `Dryft` marketplace, and install the `Dryft` plugin. The plugin bundles:
 
 - MCP config that starts `npx -y @dijla-ventures-llc/dryft@latest mcp`
-- A Codex skill that tells the agent to call `dryft_plan_change` before editing files
+- A Codex skill that tells the agent to call `dryft_plan_change` before editing and `dryft_verify_change` before finishing
 
 If you added the marketplace before a Dryft plugin update, refresh it:
 
@@ -95,12 +104,43 @@ dryft_plan_change(
 )
 ```
 
-Dryft returns:
+Dryft returns a decision plus a persistent local `changeId` contract:
 
 - `ready` when the planned files belong to active feature areas
 - `needs_review` when the change touches deprecated or multiple feature areas
 - `needs_manifest_update` when a file is not covered by `dryft.yml`
 - `blocked_archived` when a file touches an archived feature
+
+After editing, the agent should verify the actual git changes against that contract:
+
+```text
+dryft_verify_change(
+  changeId="dryft_<id returned by dryft_plan_change>"
+)
+```
+
+For verification, Dryft returns a decision and a copy-pasteable receipt:
+
+- `verified` when the actual changed files match the planned feature boundary
+- `needs_review` when the git diff includes unplanned files, unexpected features, deprecated features, or cross-feature scope
+- `needs_manifest_update` when actual changed files are not covered by `dryft.yml`
+- `blocked_archived` when actual changed files touch an archived feature
+
+Example receipt:
+
+```text
+Dryft Receipt: needs_review
+Intent: Add password reset email flow
+Change ID: dryft_mabc123_1
+Planned features: auth.account-recovery
+Actual features: auth.account-recovery, email.delivery
+Unplanned files: src/email/send.ts
+Required: Explain why the actual changed files differ from the plan.
+```
+
+`dryft_verify_change` reads local git state. It considers branch changes from the optional base ref, unstaged changes, staged changes, and untracked files. It does not upload results anywhere. Change contracts are persisted in the repository's git metadata by default, so `changeId` keeps working after the MCP server restarts and is not committed by normal git operations. Outside a git repository, Dryft falls back to `.dryft/contracts`.
+
+If Dryft finds an unowned file, it also suggests a narrow `dryft.yml` patch shape. The agent should not blindly apply it; use the suggestion as a starting point and keep the feature map aligned with the repo's real product boundaries.
 
 One-shot prompt for coding agents:
 
@@ -110,8 +150,9 @@ You are working in a repository that uses Dryft as its feature map and MCP contr
 Before editing:
 1. Read dryft.yml or call dryft_list_features if you need the feature map.
 2. Call dryft_plan_change with your intent and the repo-relative files you plan to touch.
-3. Follow the returned decision, risks, and next steps before editing.
-4. Name the feature IDs you are touching in your plan.
+3. Save the returned changeId.
+4. Follow the returned decision, risks, and next steps before editing.
+5. Name the feature IDs you are touching in your plan.
 
 While editing:
 - Keep changes inside the matched feature's path boundaries when possible.
@@ -120,16 +161,20 @@ While editing:
 - If you touch a deprecated or archived feature, call that out explicitly.
 
 Before finishing:
-1. Run npx @dijla-ventures-llc/dryft scan --format text.
-2. Fix manifest or path problems.
-3. Summarize the feature IDs touched and any dryft.yml changes.
+1. Call dryft_verify_change with the changeId from dryft_plan_change.
+2. Include the Dryft Receipt in your final response.
+3. If Dryft returns verified, summarize the verified feature IDs.
+4. If Dryft returns needs_review, explain the unplanned files, unexpected features, or cross-feature scope.
+5. If Dryft returns needs_manifest_update, review any suggested dryft.yml patch, update the manifest if the suggestion matches the repo's real feature boundaries, or explain why the manifest still needs human review.
+6. If Dryft returns blocked_archived, stop and ask before finalizing.
 ```
 
 The useful MCP tools are:
 
 | Tool | Use |
 | --- | --- |
-| `dryft_plan_change` | Plan a change before editing with intent, files, feature ownership, risks, and next steps. |
+| `dryft_plan_change` | Plan a change before editing with intent, files, feature ownership, risks, next steps, manifest suggestions, and a persistent local `changeId`. |
+| `dryft_verify_change` | Verify actual git changes against a `changeId` contract before the agent finalizes its response. |
 | `dryft_list_features` | List every feature with id, status, title, owner, and file count. |
 | `dryft_get_feature` | Get one feature's metadata and matching files. |
 | `dryft_features_for_file` | Find which feature or features own a file path. |
@@ -220,7 +265,7 @@ npx dryft context file src/auth/login.ts --format json
 
 ## Drift Checks
 
-Dryft v0.3 is MCP-first, but the CLI still includes a narrow PR drift check:
+Dryft is MCP-first, but the CLI still includes a narrow PR drift check:
 
 ```sh
 npx dryft ci --base origin/main

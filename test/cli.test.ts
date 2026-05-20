@@ -29,6 +29,14 @@ test("dryft init writes starter manifest, agent instructions, and MCP config", a
     /dryft_plan_change/
   );
   assert.match(
+    await readFile(join(dir, "AGENTS.md"), "utf8"),
+    /dryft_verify_change/
+  );
+  assert.match(
+    await readFile(join(dir, "AGENTS.md"), "utf8"),
+    /Dryft Receipt/
+  );
+  assert.match(
     await readFile(join(dir, ".mcp.json"), "utf8"),
     /@dijla-ventures-llc\/dryft@latest/
   );

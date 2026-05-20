@@ -29,12 +29,22 @@ export interface ChangePlanOptions {
   files: string[];
 }
 
+export interface ManifestPatchSuggestion {
+  featureId: string;
+  title: string;
+  status: "active";
+  paths: string[];
+  files: string[];
+  yaml: string;
+}
+
 export interface ChangePlanFile {
   path: string;
   ownership: "owned" | "unowned";
   featureIds: string[];
   status: FeatureStatus | "mixed" | "unowned";
   suggestedPathGlob?: string;
+  manifestSuggestion?: ManifestPatchSuggestion;
   guidance: string;
 }
 
@@ -59,6 +69,7 @@ export interface ChangePlan {
   decision: ChangePlanDecision;
   files: ChangePlanFile[];
   features: ChangePlanFeature[];
+  manifestSuggestions: ManifestPatchSuggestion[];
   risks: ChangePlanRisk[];
   nextSteps: string[];
 }
@@ -191,7 +202,8 @@ export function planChange(
     }
 
     if (featureIds.length === 0) {
-      const suggestedPathGlob = suggestPathGlob(filePath);
+      const manifestSuggestion = suggestManifestPatch(filePath);
+      const suggestedPathGlob = manifestSuggestion.paths[0];
       risks.push({
         code: "unowned_file",
         severity: "warning",
@@ -204,6 +216,7 @@ export function planChange(
         featureIds: [],
         status: "unowned",
         suggestedPathGlob,
+        manifestSuggestion,
         guidance: `No feature matches this path. Consider adding \`${suggestedPathGlob}\` to the correct feature in dryft.yml.`
       };
     }
@@ -260,9 +273,55 @@ export function planChange(
     decision,
     files: plannedFiles,
     features,
+    manifestSuggestions: mergeManifestPatchSuggestions(
+      plannedFiles
+        .map((file) => file.manifestSuggestion)
+        .filter((suggestion): suggestion is ManifestPatchSuggestion =>
+          Boolean(suggestion)
+        )
+    ),
     risks,
     nextSteps: buildNextSteps(decision, features, risks)
   };
+}
+
+export function suggestManifestPatch(filePath: string): ManifestPatchSuggestion {
+  const normalizedPath = toPosixPath(filePath).trim();
+  const pathGlob = suggestPathGlob(normalizedPath);
+  const featureId = suggestFeatureId(normalizedPath);
+  const title = toTitle(featureId);
+  return {
+    featureId,
+    title,
+    status: "active",
+    paths: [pathGlob],
+    files: [normalizedPath],
+    yaml: formatManifestPatchYaml(featureId, title, [pathGlob])
+  };
+}
+
+export function mergeManifestPatchSuggestions(
+  suggestions: ManifestPatchSuggestion[]
+): ManifestPatchSuggestion[] {
+  const byKey = new Map<string, ManifestPatchSuggestion>();
+
+  for (const suggestion of suggestions) {
+    const key = `${suggestion.featureId}\0${suggestion.paths.join("\0")}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.files = sortUnique([...existing.files, ...suggestion.files]);
+    } else {
+      byKey.set(key, {
+        ...suggestion,
+        paths: [...suggestion.paths],
+        files: sortUnique(suggestion.files)
+      });
+    }
+  }
+
+  return [...byKey.values()].sort((left, right) =>
+    left.featureId.localeCompare(right.featureId)
+  );
 }
 
 function sortUnique(values: string[]): string[] {
@@ -344,7 +403,61 @@ function suggestPathGlob(filePath: string): string {
   if (parts.length <= 1) {
     return filePath;
   }
+  if (
+    ["src", "test", "tests", "app", "pages", "components"].includes(parts[0]) &&
+    parts.length >= 2
+  ) {
+    return `${parts[0]}/${parts[1]}/**`;
+  }
+  if (parts[0] === "packages" && parts.length >= 2) {
+    return `${parts[0]}/${parts[1]}/**`;
+  }
   return `${parts[0]}/**`;
+}
+
+function suggestFeatureId(filePath: string): string {
+  const parts = filePath.split("/").filter(Boolean);
+  const meaningfulPart =
+    ["src", "test", "tests", "app", "pages", "components"].includes(parts[0]) &&
+    parts.length >= 2
+      ? parts[1]
+      : parts[0] === "packages" && parts.length >= 2
+      ? parts[1]
+      : parts[0] ?? "new-feature";
+  const withoutExtension = meaningfulPart.replace(/\.[^.]+$/, "");
+  const cleaned = withoutExtension
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!cleaned) {
+    return "new-feature";
+  }
+  if (/^[a-z]/.test(cleaned)) {
+    return cleaned;
+  }
+  return `feature-${cleaned}`;
+}
+
+function toTitle(featureId: string): string {
+  return featureId
+    .split(/[.-]/)
+    .filter(Boolean)
+    .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+function formatManifestPatchYaml(
+  featureId: string,
+  title: string,
+  paths: string[]
+): string {
+  return [
+    `  - id: ${featureId}`,
+    `    title: ${title}`,
+    "    status: active",
+    "    paths:",
+    ...paths.map((pathGlob) => `      - ${pathGlob}`)
+  ].join("\n");
 }
 
 function formatFeatureList(featureIds: string[]): string {

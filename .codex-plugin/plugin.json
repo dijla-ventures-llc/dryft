@@ -1,7 +1,7 @@
 {
   "name": "dryft",
-  "version": "0.3.0",
-  "description": "A feature map and MCP pre-edit controller for AI coding agents.",
+  "version": "0.4.0",
+  "description": "Feature contracts for AI coding agents.",
   "author": {
     "name": "Dijla Ventures LLC",
     "url": "https://github.com/dijla-ventures-llc"
@@ -14,14 +14,15 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Dryft",
-    "shortDescription": "Pre-edit feature map for AI agents",
-    "longDescription": "Dryft gives AI coding agents a structured, queryable view of your codebase's features. Agents call MCP tools to plan changes against dryft.yml before editing instead of inventing a new naming convention every session.",
+    "shortDescription": "Feature contracts for AI agents",
+    "longDescription": "Dryft gives AI coding agents a structured, queryable view of your codebase's features. Agents call MCP tools to create a persistent local change contract against dryft.yml before editing, then verify the actual git diff and produce a Dryft Receipt before final response.",
     "developerName": "Dijla Ventures LLC",
     "category": "Productivity",
     "capabilities": ["Read"],
     "websiteURL": "https://github.com/dijla-ventures-llc/dryft",
     "defaultPrompt": [
-      "Before editing files, ask Dryft to plan the change against the feature map.",
+      "Before editing files, ask Dryft to plan the change against the feature map and save the changeId.",
+      "Before final response, ask Dryft to verify the actual git diff against the changeId and include the Dryft Receipt.",
       "List the features in this codebase using Dryft."
     ]
   }

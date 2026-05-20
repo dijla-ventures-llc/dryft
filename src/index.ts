@@ -22,6 +22,20 @@ export {
   toTextReport
 } from "./reporters.js";
 export { scanRepository } from "./scanner.js";
+export { getCurrentChangedFiles, verifyChange } from "./verify.js";
+export type {
+  ChangePlan,
+  ChangePlanDecision,
+  ChangePlanFeature,
+  ChangePlanFile,
+  ChangePlanOptions,
+  ChangePlanRisk,
+  ChangePlanRiskCode,
+  ManifestPatchSuggestion
+} from "./context.js";
+export type {
+  DryftChangeContract
+} from "./mcp.js";
 export type {
   CiOptions,
   DryftFeature,
@@ -38,3 +52,10 @@ export type {
   ReportMode,
   ScanOptions
 } from "./types.js";
+export type {
+  VerifyChangeDecision,
+  VerifyChangeOptions,
+  VerifyChangeResult,
+  VerifyChangeRisk,
+  VerifyChangeRiskCode
+} from "./verify.js";

@@ -29,6 +29,13 @@ features:
       - src/ci.ts
       - src/vendor.d.ts
       - test/ci.test.ts
+  - id: core.verify
+    title: Post-edit change verification
+    status: active
+    owner: core
+    paths:
+      - src/verify.ts
+      - test/verify.test.ts
   - id: core.reporting
     title: Text, JSON, SARIF, and Markdown reporting
     status: active

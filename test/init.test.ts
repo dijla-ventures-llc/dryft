@@ -11,8 +11,11 @@ test("init templates include starter manifest, agent instructions, and MCP confi
   assert.match(createStarterManifest("Example"), /features:/);
   assert.match(createStarterManifest("Example"), /auth.magic-link.login/);
   assert.match(createAgentInstructions(), /dryft_plan_change/);
+  assert.match(createAgentInstructions(), /dryft_verify_change/);
+  assert.match(createAgentInstructions(), /changeId/);
+  assert.match(createAgentInstructions(), /Dryft Receipt/);
   assert.match(createAgentInstructions(), /One-shot agent prompt/);
-  assert.match(createAgentInstructions(), /feature IDs touched/);
+  assert.match(createAgentInstructions(), /verified feature IDs/);
   assert.match(createMcpConfig(), /"mcpServers"/);
   assert.match(createMcpConfig(), /@dijla-ventures-llc\/dryft@latest/);
   assert.match(createMcpConfig(), /"mcp"/);

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- `dryft_verify_change` MCP tool for post-edit verification. Agents can compare actual git changes against the files they planned to touch before final response.
+- Persistent local change contracts: `dryft_plan_change` now returns a `changeId`, and `dryft_verify_change` can verify against that saved contract even after an MCP restart.
+- Dryft Receipt output for agent final responses and review summaries.
+- Suggested `dryft.yml` patch output for unowned files in plan and verification results.
+- Structured verification output with actual files, planned and actual features, unplanned files, unowned files, risks, and next steps.
+- Public exports for change plan, change contract, and manifest patch suggestion types.
+
+### Changed
+
+- README now documents the full agent loop: plan before editing, verify before finishing.
+- Codex skill and generated agent instructions now direct agents to save `changeId`, call `dryft_verify_change` after editing, and include the Dryft Receipt before final response.
+
 ## 0.3.0
 
 ### Added
